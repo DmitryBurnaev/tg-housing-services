@@ -7,6 +7,7 @@ def parse_website(url: str) -> list[tuple]:
     Parses websites by URL's provided in params
 
     :param url: requested site which should be parsed
+    :return: given data from website
     """
 
     with httpx.Client() as client:
