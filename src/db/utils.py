@@ -1,4 +1,4 @@
-""" Small module for DB-related operations """
+"""Small module for DB-related operations"""
 
 import sqlite3
 from datetime import datetime
@@ -19,14 +19,14 @@ def create_table(db_name):
     """
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
-    c.execute('''
+    c.execute("""
         CREATE TABLE IF NOT EXISTS data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY,
             created_at DATETIME,
             parsed_text TEXT,
             parsed_data TEXT
         )
-    ''')
+    """)
     conn.commit()
     conn.close()
 
@@ -45,12 +45,15 @@ def insert_data(db_name, raw_data, parsed_data):
 
     Example:
     insert_data('my_database.db', raw_data, parsed_data)
-    """    
+    """
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
     now = datetime.now()
-    c.execute('''
+    c.execute(
+        """
         INSERT INTO data (created_at, parsed_text, parsed_data) VALUES (?, ?, ?)
-    ''', (now, str(raw_data), str(parsed_data)))
+    """,
+        (now, str(raw_data), str(parsed_data)),
+    )
     conn.commit()
     conn.close()
