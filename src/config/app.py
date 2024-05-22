@@ -14,10 +14,14 @@ class SupportedService(enum.StrEnum):
 
 RESOURCE_URLS = {
     SupportedCity.SPB: {
-        SupportedService.ELECTRICITY: "https://rosseti-lenenergo.ru/planned_work/",
+        SupportedService.ELECTRICITY: "https://rosseti-lenenergo.ru/planned_work/city={city}&date_finish={date_finish}",
         SupportedService.HOT_WATER: "https://www.gptek.spb.ru/grafik/",
         SupportedService.COLD_WATER: "https://www.vodokanal.spb.ru/presscentr/remontnye_raboty/",
     }
+}
+
+CITY_NAME_MAP = {
+    SupportedCity.SPB: "Санкт-Петербург",
 }
 
 
