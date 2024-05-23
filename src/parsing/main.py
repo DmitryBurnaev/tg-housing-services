@@ -1,3 +1,4 @@
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
 import httpx
@@ -12,6 +13,7 @@ class Parser:
         self.address = address
         self.urls = RESOURCE_URLS[city]
         self.city = city
+        self.finish_date = (datetime.now(timezone.utc) + timedelta(days=30)).date()
 
     def parse(self, service) -> dict[str, Any]:
         print(f"Parsing for service: {service} ({self.address})")
@@ -19,7 +21,7 @@ class Parser:
 
     def _get_content(self, service: SupportedService) -> str:
         city_name = CITY_NAME_MAP[self.city]
-        url = self.urls[service].format(city=city_name, date_finish="18.06.2024")
+        url = self.urls[service].format(city=city_name, date_finish=self.finish_date.isoformat())
         with httpx.Client() as client:
             response = client.get(url)
 
