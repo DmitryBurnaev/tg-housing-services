@@ -11,6 +11,7 @@ class Parser:
 
     def __init__(self, city: SupportedCity, address: str) -> None:
         self.address = address
+        self.street, self.house = self._get_street_and_house(address)
         self.urls = RESOURCE_URLS[city]
         self.city = city
         self.finish_date = (datetime.now(timezone.utc) + timedelta(days=30)).date()
@@ -47,3 +48,13 @@ class Parser:
                 data.append((columns[0], columns[1]))
 
         return dict(data)
+
+    @staticmethod
+    def _get_street_and_house(address: str) -> tuple[str, int | None]:
+        street, _, house = address.rpartition(" ")
+        if str.isdigit(house):
+            house = int(house)
+        else:
+            street, house = address, None
+
+        return street, house
