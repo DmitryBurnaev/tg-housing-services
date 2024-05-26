@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class Parser:
+    date_format = "%d.%m.%Y"
 
     def __init__(self, city: SupportedCity, address: str) -> None:
         self.address = address
@@ -61,15 +62,19 @@ class Parser:
         if not rows:
             logger.info("No data found for service: %s", service)
             return None
+
         result = {}
         for row in rows:
             streets = row.xpath(".//td[@class='rowStreets']")[0].xpath(".//span/text()")
             print(streets)
             times = row.xpath("td/text()")[5:9]
+            date_start, time_start, date_end, time_end = times
             for street in streets:
                 street: str = street.replace("\n", "").strip()
-                result[street] = times
-            # data.append((columns[0], columns[1]))
+                result[street] = {
+                    "start": self._prepare_time(date_start, time_start),
+                    "end": self._prepare_time(date_end, time_end),
+                }
 
         return result
 
@@ -87,3 +92,11 @@ class Parser:
     @staticmethod
     def _format_date(date: datetime) -> str:
         return date.date().strftime("%d.%m.%Y")
+
+    def _prepare_time(self, date: str, time: str) -> datetime:
+        dt_string = f"{self._clear_string(date)}T{self._clear_string(time)}"
+        return datetime.strptime(dt_string, f"%d-%m-%YT%H:%M")
+
+    @staticmethod
+    def _clear_string(src_string: str) -> str:
+        return src_string.replace("\n", "").strip()
