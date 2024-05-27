@@ -1,3 +1,4 @@
+import re
 import hashlib
 import logging
 import urllib.parse
@@ -66,12 +67,11 @@ class Parser:
         result = {}
         for row in rows:
             streets = row.xpath(".//td[@class='rowStreets']")[0].xpath(".//span/text()")
-            print(streets)
             times = row.xpath("td/text()")[5:9]
             date_start, time_start, date_end, time_end = times
             for street in streets:
-                street: str = street.replace("\n", "").strip()
-                result[street] = {
+                street_name, house = self._get_street_and_house(street.replace("\n", "").strip())
+                result[street_name] = {
                     "start": self._prepare_time(date_start, time_start),
                     "end": self._prepare_time(date_end, time_end),
                 }
@@ -79,15 +79,13 @@ class Parser:
         return result
 
     @staticmethod
-    def _get_street_and_house(address: str) -> tuple[str, int | None]:
+    def _get_street_and_house(address: str) -> tuple[str, list[int]]:
         street, _, house = address.rpartition(" ")
-        if str.isdigit(house):
-            house = int(house)
-        else:
-            street, house = address, None
+        if not (houses := parse_range_string(house)):
+            street, houses = address, []
 
-        logger.debug(f"Street: {street}, House: {house}")
-        return street, house
+        logger.debug(f"Street: {street}, House: {houses}")
+        return street, houses
 
     @staticmethod
     def _format_date(date: datetime) -> str:
@@ -100,3 +98,31 @@ class Parser:
     @staticmethod
     def _clear_string(src_string: str) -> str:
         return src_string.replace("\n", "").strip()
+
+
+
+def parse_range_string(range_string):
+    # Use regular expression to extract the numeric range or single number
+    if range_string.isdigit():
+        return [int(range_string.strip())]
+
+    if match_range := re.search(r'(\d+)-(\d+)', range_string):
+        start = int(match_range.group(1))
+        end = int(match_range.group(2))
+        return list(range(start, end + 1))
+
+    if match_single := re.search(r'(\d+)', range_string):
+        number = int(match_single.group(1))
+        return [number]
+
+    return []
+
+
+# Example usage
+range_string_1 = "д56-60"
+parsed_array_1 = parse_range_string(range_string_1)
+print(parsed_array_1)  # Output: [56, 57, 58, 59, 60]
+
+range_string_2 = "д77"
+parsed_array_2 = parse_range_string(range_string_2)
+print(parsed_array_2)  # Output: [77]
