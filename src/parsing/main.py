@@ -1,3 +1,4 @@
+import pprint
 import re
 import hashlib
 import logging
@@ -66,21 +67,23 @@ class Parser:
 
         result = {}
         for row in rows:
-            streets = row.xpath(".//td[@class='rowStreets']")[0].xpath(".//span/text()")
-            times = row.xpath("td/text()")[5:9]
-            date_start, time_start, date_end, time_end = times
-            for street in streets:
-                street_name, house = self._get_street_and_house(street.replace("\n", "").strip())
-                result[street_name] = {
-                    "start": self._prepare_time(date_start, time_start),
-                    "end": self._prepare_time(date_end, time_end),
-                }
-
+            if row_streets := row.xpath(".//td[@class='rowStreets']"):
+                streets = row_streets[0].xpath(".//span/text()")
+                times = row.xpath("td/text()")[5:9]
+                date_start, time_start, date_end, time_end = times
+                for street in streets:
+                    street_name, house = self._get_street_and_house(street.replace("\n", "").strip())
+                    result[street_name] = {
+                        "start": self._prepare_time(date_start, time_start),
+                        "end": self._prepare_time(date_end, time_end),
+                    }
+        pprint.pprint(result, indent=4)
         return result
 
     @staticmethod
     def _get_street_and_house(address: str) -> tuple[str, list[int]]:
         street, _, house = address.rpartition(" ")
+        print(f"{address=} {street=} {house=}")
         if not (houses := parse_range_string(house)):
             street, houses = address, []
 
@@ -100,7 +103,6 @@ class Parser:
         return src_string.replace("\n", "").strip()
 
 
-
 def parse_range_string(range_string):
     # Use regular expression to extract the numeric range or single number
     if range_string.isdigit():
@@ -118,11 +120,41 @@ def parse_range_string(range_string):
     return []
 
 
-# Example usage
-range_string_1 = "д56-60"
-parsed_array_1 = parse_range_string(range_string_1)
-print(parsed_array_1)  # Output: [56, 57, 58, 59, 60]
+def extract_house_numbers(address: str) -> list[int] | None:
+    # Define the regex pattern to find either a single house number or a range
+    pattern = r"д\.(\d+)(?:-(\d+))?"
+    if match := re.search(pattern, address):
+        start_number = int(match.group(1))
+        if match.group(2):
+            end_number = int(match.group(2))
+            return list(range(start_number, end_number + 1))
+        else:
+            return [start_number]
 
-range_string_2 = "д77"
-parsed_array_2 = parse_range_string(range_string_2)
-print(parsed_array_2)  # Output: [77]
+    return None
+
+
+# Example usage
+addresses = [
+    "Test пр., д.75",
+    "Test пр., д.75-105"
+]
+
+for address in addresses:
+    house_numbers = extract_house_numbers(address)
+    if house_numbers:
+        print(f"House numbers for '{address}': {house_numbers}")
+    else:
+        print(f"No house numbers found for '{address}'")
+
+
+
+#
+# # Example usage
+# range_string_1 = "д56-60"
+# parsed_array_1 = parse_range_string(range_string_1)
+# print(parsed_array_1)  # Output: [56, 57, 58, 59, 60]
+#
+# range_string_2 = "д77"
+# parsed_array_2 = parse_range_string(range_string_2)
+# print(parsed_array_2)  # Output: [77]
