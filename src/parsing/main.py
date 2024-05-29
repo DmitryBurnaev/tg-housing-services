@@ -82,13 +82,14 @@ class Parser:
 
     @staticmethod
     def _get_street_and_house(address: str) -> tuple[str, list[int]]:
-        street, _, house = address.rpartition(" ")
-        print(f"{address=} {street=} {house=}")
-        if not (houses := parse_range_string(house)):
-            street, houses = address, []
-
-        logger.debug(f"Street: {street}, House: {houses}")
-        return street, houses
+        return extract_street_and_house_numbers(address)
+        # street, _, house = address.rpartition(" ")
+        # print(f"{address=} {street=} {house=}")
+        # if not (houses := parse_range_string(house)):
+        #     street, houses = address, []
+        #
+        # logger.debug(f"Street: {street}, House: {houses}")
+        # return street, houses
 
     @staticmethod
     def _format_date(date: datetime) -> str:
@@ -120,18 +121,24 @@ def parse_range_string(range_string):
     return []
 
 
-def extract_house_numbers(address: str) -> list[int] | None:
-    # Define the regex pattern to find either a single house number or a range
-    pattern = r"д\.(\d+)(?:-(\d+))?"
-    if match := re.search(pattern, address):
-        start_number = int(match.group(1))
-        if match.group(2):
-            end_number = int(match.group(2))
-            return list(range(start_number, end_number + 1))
+def extract_street_and_house_numbers(address: str) -> tuple[str | None, list[int] | None]:
+    """
+    Define the regex pattern to find the street name, single house number, or a range using
+    named groups
+    """
+    pattern = r"(?P<street>.+?),\s*д\.(?P<start>\d+)(?:-(?P<end>\d+))?"
+    match = re.search(pattern, address)
+    if match:
+        street_name: str = match.group('street')
+        start_number = int(match.group('start'))
+        if match.group('end'):
+            end_number = int(match.group('end'))
+            house_numbers: list[int] = list(range(start_number, end_number + 1))
         else:
-            return [start_number]
+            house_numbers: list[int] = [start_number]
+        return street_name, house_numbers
 
-    return None
+    return None, None
 
 
 # Example usage
