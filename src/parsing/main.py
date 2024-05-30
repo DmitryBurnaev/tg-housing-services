@@ -3,6 +3,7 @@ import re
 import hashlib
 import logging
 import urllib.parse
+from collections import defaultdict
 from typing import Any
 from datetime import datetime, timezone, timedelta
 
@@ -31,7 +32,7 @@ class Parser:
     def _get_content(self, service: SupportedService) -> str:
         url = self.urls[service].format(
             city=urllib.parse.quote_plus(CITY_NAME_MAP[self.city]),
-            street=urllib.parse.quote_plus(self.street),
+            street=urllib.parse.quote_plus(self.street.encode()) if self.street else "",
             date_start=self._format_date(datetime.now()),
             date_finish=self._format_date(self.finish_time_filter),
         )
@@ -65,18 +66,22 @@ class Parser:
             logger.info("No data found for service: %s", service)
             return None
 
-        result = {}
+        result = defaultdict(list)
         for row in rows:
             if row_streets := row.xpath(".//td[@class='rowStreets']"):
                 streets = row_streets[0].xpath(".//span/text()")
-                times = row.xpath("td/text()")[5:9]
-                date_start, time_start, date_end, time_end = times
+                date_start, time_start, date_end, time_end = row.xpath("td/text()")[5:9]
+                print(date_start, time_start, date_end, time_end)
                 for street in streets:
-                    street_name, house = self._get_street_and_house(street.replace("\n", "").strip())
-                    result[street_name] = {
-                        "start": self._prepare_time(date_start, time_start),
-                        "end": self._prepare_time(date_end, time_end),
-                    }
+                    street_name, houses = self._get_street_and_house(street.replace("\n", "").strip())
+                    result[street_name].append(
+                        {
+                            "houses": houses,
+                            "start": self._prepare_time(date_start, time_start),
+                            "end": self._prepare_time(date_end, time_end),
+                        }
+                    )
+
         pprint.pprint(result, indent=4)
         return result
 
@@ -95,9 +100,13 @@ class Parser:
     def _format_date(date: datetime) -> str:
         return date.date().strftime("%d.%m.%Y")
 
-    def _prepare_time(self, date: str, time: str) -> datetime:
-        dt_string = f"{self._clear_string(date)}T{self._clear_string(time)}"
-        return datetime.strptime(dt_string, f"%d-%m-%YT%H:%M")
+    def _prepare_time(self, date: str, time: str) -> datetime | None:
+        date = self._clear_string(date)
+        time = self._clear_string(time)
+        if date and time:
+            return datetime.strptime(f"{date}T{time}", "%d-%m-%YT%H:%M")
+
+        return None
 
     @staticmethod
     def _clear_string(src_string: str) -> str:
@@ -142,17 +151,17 @@ def extract_street_and_house_numbers(address: str) -> tuple[str | None, list[int
 
 
 # Example usage
-addresses = [
-    "Test пр., д.75",
-    "Test пр., д.75-105"
-]
-
-for address in addresses:
-    house_numbers = extract_house_numbers(address)
-    if house_numbers:
-        print(f"House numbers for '{address}': {house_numbers}")
-    else:
-        print(f"No house numbers found for '{address}'")
+# addresses = [
+#     "Test пр., д.75",
+#     "Test пр., д.75-105"
+# ]
+#
+# for address in addresses:
+#     house_numbers = extract_house_numbers(address)
+#     if house_numbers:
+#         print(f"House numbers for '{address}': {house_numbers}")
+#     else:
+#         print(f"No house numbers found for '{address}'")
 
 
 
