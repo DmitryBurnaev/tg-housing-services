@@ -72,6 +72,7 @@ class Parser:
                 streets = row_streets[0].xpath(".//span/text()")
                 date_start, time_start, date_end, time_end = row.xpath("td/text()")[5:9]
                 print(date_start, time_start, date_end, time_end)
+                print("---")
                 for street in streets:
                     street_name, houses = self._get_street_and_house(street.replace("\n", "").strip())
                     result[street_name].append(
@@ -88,13 +89,6 @@ class Parser:
     @staticmethod
     def _get_street_and_house(address: str) -> tuple[str, list[int]]:
         return extract_street_and_house_numbers(address)
-        # street, _, house = address.rpartition(" ")
-        # print(f"{address=} {street=} {house=}")
-        # if not (houses := parse_range_string(house)):
-        #     street, houses = address, []
-        #
-        # logger.debug(f"Street: {street}, House: {houses}")
-        # return street, houses
 
     @staticmethod
     def _format_date(date: datetime) -> str:
@@ -113,29 +107,12 @@ class Parser:
         return src_string.replace("\n", "").strip()
 
 
-def parse_range_string(range_string):
-    # Use regular expression to extract the numeric range or single number
-    if range_string.isdigit():
-        return [int(range_string.strip())]
-
-    if match_range := re.search(r'(\d+)-(\d+)', range_string):
-        start = int(match_range.group(1))
-        end = int(match_range.group(2))
-        return list(range(start, end + 1))
-
-    if match_single := re.search(r'(\d+)', range_string):
-        number = int(match_single.group(1))
-        return [number]
-
-    return []
-
-
 def extract_street_and_house_numbers(address: str) -> tuple[str | None, list[int] | None]:
     """
     Define the regex pattern to find the street name, single house number, or a range using
     named groups
     """
-    pattern = r"(?P<street>.+?),\s*д\.(?P<start>\d+)(?:-(?P<end>\d+))?"
+    pattern = r"(?P<street>.+?),?\s*\w+(?P<start>\d+)(?:-(?P<end>\d+))?"
     match = re.search(pattern, address)
     if match:
         street_name: str = match.group('street')
