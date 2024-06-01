@@ -24,6 +24,7 @@ class Parser:
         self.urls = RESOURCE_URLS[city]
         self.city = city
         self.finish_time_filter = datetime.now(timezone.utc) + timedelta(days=30)
+        self.date_start = datetime.fromisoformat("2024-05-30")
 
     def parse(self, service) -> dict[str, Any]:
         logger.debug(f"Parsing for service: {service} ({self.address})")
@@ -33,7 +34,7 @@ class Parser:
         url = self.urls[service].format(
             city=urllib.parse.quote_plus(CITY_NAME_MAP[self.city]),
             street=urllib.parse.quote_plus(self.street.encode()) if self.street else "",
-            date_start=self._format_date(datetime.now()),
+            date_start=self._format_date(self.date_start),
             date_finish=self._format_date(self.finish_time_filter),
         )
         tmp_file_path = (
@@ -70,6 +71,8 @@ class Parser:
         for row in rows:
             if row_streets := row.xpath(".//td[@class='rowStreets']"):
                 streets = row_streets[0].xpath(".//span/text()")
+                dates = row.xpath("td/text()")[5:9]
+                print(dates)
                 date_start, time_start, date_end, time_end = row.xpath("td/text()")[5:9]
                 print(date_start, time_start, date_end, time_end)
                 print("---")
@@ -112,7 +115,7 @@ def extract_street_and_house_numbers(address: str) -> tuple[str | None, list[int
     Define the regex pattern to find the street name, single house number, or a range using
     named groups
     """
-    pattern = r"(?P<street>.+?),?\s*\w+(?P<start>\d+)(?:-(?P<end>\d+))?"
+    pattern = r"(?P<street>.+?),?(?P<start>\d+)(?:-(?P<end>\d+))?"
     match = re.search(pattern, address)
     if match:
         street_name: str = match.group('street')
@@ -125,29 +128,3 @@ def extract_street_and_house_numbers(address: str) -> tuple[str | None, list[int
         return street_name, house_numbers
 
     return None, None
-
-
-# Example usage
-# addresses = [
-#     "Test пр., д.75",
-#     "Test пр., д.75-105"
-# ]
-#
-# for address in addresses:
-#     house_numbers = extract_house_numbers(address)
-#     if house_numbers:
-#         print(f"House numbers for '{address}': {house_numbers}")
-#     else:
-#         print(f"No house numbers found for '{address}'")
-
-
-
-#
-# # Example usage
-# range_string_1 = "д56-60"
-# parsed_array_1 = parse_range_string(range_string_1)
-# print(parsed_array_1)  # Output: [56, 57, 58, 59, 60]
-#
-# range_string_2 = "д77"
-# parsed_array_2 = parse_range_string(range_string_2)
-# print(parsed_array_2)  # Output: [77]
