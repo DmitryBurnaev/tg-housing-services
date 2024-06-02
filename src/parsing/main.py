@@ -77,7 +77,9 @@ class Parser:
                 print(date_start, time_start, date_end, time_end)
                 print("---")
                 for street in streets:
-                    street_name, houses = self._get_street_and_house(street.replace("\n", "").strip())
+                    street_name, houses = self._get_street_and_house(
+                        street.replace("\n", "").strip()
+                    )
                     result[street_name].append(
                         {
                             "houses": houses,
@@ -118,10 +120,10 @@ def extract_street_and_house_numbers(address: str) -> tuple[str | None, list[int
     pattern = r"(?P<street>.+?),?(?P<start>\d+)(?:-(?P<end>\d+))?"
     match = re.search(pattern, address)
     if match:
-        street_name: str = match.group('street')
-        start_number = int(match.group('start'))
-        if match.group('end'):
-            end_number = int(match.group('end'))
+        street_name: str = match.group("street")
+        start_number = int(match.group("start"))
+        if match.group("end"):
+            end_number = int(match.group("end"))
             house_numbers: list[int] = list(range(start_number, end_number + 1))
         else:
             house_numbers: list[int] = [start_number]

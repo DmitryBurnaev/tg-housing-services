@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     parser = argparse.ArgumentParser(description="Process some addresses.")
-    parser.add_argument('address', metavar='address', type=str)
+    parser.add_argument("address", metavar="address", type=str)
     logging.config.dictConfig(LOGGING_CONFIG)
     logging.captureWarnings(capture=True)
 
@@ -21,5 +21,5 @@ def main():
         logger.info(f"Parse Result: \n{result}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
