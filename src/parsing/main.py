@@ -17,10 +17,13 @@ logger = logging.getLogger(__name__)
 
 class Parser:
     date_format = "%d.%m.%Y"
+    address_regex = re.compile(
+        r"(?P<street_name>[\w\s.]+?),\s(?:д\.?|дом)\s*(?P<start_house>\d+)(?:[-–](?P<end_house>\d+))?(?:\sкорп\.\d+)?"
+    )
 
     def __init__(self, city: SupportedCity, address: str) -> None:
         self.address = address
-        self.street, self.house = self._get_street_and_house(address)
+        self.street, self.house = self.get_street_and_house(address)
         self.urls = RESOURCE_URLS[city]
         self.city = city
         self.finish_time_filter = datetime.now(timezone.utc) + timedelta(days=30)
@@ -77,7 +80,7 @@ class Parser:
                 print(date_start, time_start, date_end, time_end)
                 print("---")
                 for street in streets:
-                    street_name, houses = self._get_street_and_house(
+                    street_name, houses = self.get_street_and_house(
                         street.replace("\n", "").strip()
                     )
                     result[street_name].append(
@@ -91,9 +94,20 @@ class Parser:
         pprint.pprint(result, indent=4)
         return result
 
-    @staticmethod
-    def _get_street_and_house(address: str) -> tuple[str, list[int]]:
-        return extract_street_and_house_numbers(address)
+    @classmethod
+    def get_street_and_house(cls, address: str) -> tuple[str, list[int]]:
+        match = cls.address_regex.search(address)
+        if match:
+            street_name = match.group("street_name").strip()
+            start_house = int(match.group("start_house"))
+            end_house = int(match.group("end_house")) if match.group("end_house") else start_house
+
+            # Generate house numbers in the range if any
+            houses = list(range(start_house, end_house + 1))
+
+            return street_name, houses
+        else:
+            return "Unknown", []
 
     @staticmethod
     def _format_date(date: datetime) -> str:
@@ -110,23 +124,3 @@ class Parser:
     @staticmethod
     def _clear_string(src_string: str) -> str:
         return src_string.replace("\n", "").strip()
-
-
-def extract_street_and_house_numbers(address: str) -> tuple[str | None, list[int] | None]:
-    """
-    Define the regex pattern to find the street name, single house number, or a range using
-    named groups
-    """
-    pattern = r"(?P<street>.+?),?(?P<start>\d+)(?:-(?P<end>\d+))?"
-    match = re.search(pattern, address)
-    if match:
-        street_name: str = match.group("street")
-        start_number = int(match.group("start"))
-        if match.group("end"):
-            end_number = int(match.group("end"))
-            house_numbers: list[int] = list(range(start_number, end_number + 1))
-        else:
-            house_numbers: list[int] = [start_number]
-        return street_name, house_numbers
-
-    return None, None

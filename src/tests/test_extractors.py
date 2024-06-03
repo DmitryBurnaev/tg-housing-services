@@ -1,6 +1,6 @@
 import pytest
 
-from src.parsing.checking import extract_street_and_house_info
+from src.parsing.main import Parser
 
 
 @pytest.mark.parametrize(
@@ -8,25 +8,26 @@ from src.parsing.checking import extract_street_and_house_info
     [
         (
             "Test Street пр., д.75 корп.1",
-            {"street_name": "Test Street пр.", "houses": [75]},
+            {"street": "Test Street пр.", "houses": [75]},
         ),
         (
             "Test Street пр., д.75-79",
-            {"street_name": "Test Street пр.", "houses": [75, 76, 77, 78, 79]},
+            {"street": "Test Street пр.", "houses": [75, 76, 77, 78, 79]},
         ),
         (
             "Test Street пр., д.79",
-            {"street_name": "Test Street пр.", "houses": [79]},
+            {"street": "Test Street пр.", "houses": [79]},
         ),
         (
             "Test Street пр., дом 75",
-            {"street_name": "Test Street пр.", "houses": [75]},
+            {"street": "Test Street пр.", "houses": [75]},
         ),
         (
             "Invalid Address Format",
-            None,
+            {"houses": [], "street": "Unknown"},
         ),
     ],
 )
 def test_extract_street_and_house_info(address, expected_result):
-    assert extract_street_and_house_info(address) == expected_result
+    street, houses = Parser.get_street_and_house(address)
+    assert {"street": street, "houses": houses} == expected_result
