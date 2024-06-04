@@ -101,10 +101,7 @@ class Parser:
             street_name = match.group("street_name").strip()
             start_house = int(match.group("start_house"))
             end_house = int(match.group("end_house")) if match.group("end_house") else start_house
-
-            # Generate house numbers in the range if any
             houses = list(range(start_house, end_house + 1))
-
             return street_name, houses
         else:
             return "Unknown", []
@@ -116,10 +113,17 @@ class Parser:
     def _prepare_time(self, date: str, time: str) -> datetime | None:
         date = self._clear_string(date)
         time = self._clear_string(time)
-        if date and time:
-            return datetime.strptime(f"{date}T{time}", "%d-%m-%YT%H:%M")
+        if not (date and time):
+            logger.warning("Missing date or time: date='%s' | time='%s'", date, time)
+            return None
 
-        return None
+        try:
+            result = datetime.strptime(f"{date}T{time}", "%d-%m-%YT%H:%M")
+        except ValueError:
+            logger.warning("Incorrect date / time: date='%s' | time='%s'", date, time)
+            return None
+
+        return result
 
     @staticmethod
     def _clear_string(src_string: str) -> str:
