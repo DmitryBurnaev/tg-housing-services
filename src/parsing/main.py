@@ -29,9 +29,15 @@ class Parser:
         self.finish_time_filter = datetime.now(timezone.utc) + timedelta(days=30)
         self.date_start = datetime.fromisoformat("2024-05-30")
 
-    def parse(self, service) -> dict[str, Any]:
+    def parse(self, service) -> dict[str, Any] | None:
         logger.debug(f"Parsing for service: {service} ({self.address})")
-        return self._parse_website(service)
+        parsed_data = self._parse_website(service)
+        logger.debug("Parsed data %s | \n%s", service, parsed_data)
+        if found_items := parsed_data.get(self.street):
+            logger.info("Found items for requested address:%s | %s", self.address, found_items)
+            return found_items
+
+        return None
 
     def _get_content(self, service: SupportedService) -> str:
         url = self.urls[service].format(
@@ -55,7 +61,7 @@ class Parser:
         tmp_file_path.write_text(response_data)
         return response_data
 
-    def _parse_website(self, service: SupportedService) -> dict[str, Any] | None:
+    def _parse_website(self, service: SupportedService) -> dict[str, list[dict]] | None:
         """
         Parses websites by URL's provided in params
 
