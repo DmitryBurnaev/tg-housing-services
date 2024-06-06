@@ -29,7 +29,7 @@ class Parser:
         self.finish_time_filter = datetime.now(timezone.utc) + timedelta(days=30)
         self.date_start = datetime.fromisoformat("2024-05-30")
 
-    def parse(self, service) -> dict[str, Any] | None:
+    def parse(self, service: SupportedService) -> dict[str, Any] | None:
         logger.debug(f"Parsing for service: {service} ({self.address})")
         parsed_data = self._parse_website(service)
         logger.debug("Parsed data %s | \n%s", service, parsed_data)
@@ -82,7 +82,7 @@ class Parser:
                 streets = row_streets[0].xpath(".//span/text()")
                 dates = row.xpath("td/text()")[5:9]
                 print(dates)
-                date_start, time_start, date_end, time_end = row.xpath("td/text()")[5:9]
+                date_start, time_start, date_end, time_end = dates
                 print(date_start, time_start, date_end, time_end)
                 print("---")
                 for street in streets:
