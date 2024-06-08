@@ -17,18 +17,18 @@ def main():
     logging.captureWarnings(capture=True)
 
     args = parser.parse_args()
-    parser = Parser(city=SupportedCity.SPB, address=args.address)
 
     user = User(
         id=uuid.uuid4(),
         name="TestUser",
+        address=args.address,
         address_street="TestStreet",
-        address_house=45
+        address_house=45,
     )
-    for service in SupportedService.__members__:
-        result = parser.parse(service)
-        logger.info(f"Parse Result: \n{result}")
-        user.send_notification(result)
+    service_data_parser = Parser(city=SupportedCity.SPB, address=user.address)
+    result = service_data_parser.parse(SupportedService.ELECTRICITY)
+    logger.info(f"Parse Result: \n{result}")
+    user.send_notification(result)
 
 
 if __name__ == "__main__":

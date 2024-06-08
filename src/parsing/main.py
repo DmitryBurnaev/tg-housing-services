@@ -1,5 +1,4 @@
 import pprint
-import re
 import hashlib
 import logging
 import urllib.parse
@@ -11,38 +10,37 @@ import httpx
 from lxml import html
 
 from src.config.app import RESOURCE_URLS, SupportedCity, SupportedService, CITY_NAME_MAP, DATA_PATH
+from src.db.models import Address
+from src.utils import get_street_and_house, ADDRESS_DEFAULT_PATTERN
 
 logger = logging.getLogger(__name__)
 
 
 class Parser:
     date_format = "%d.%m.%Y"
-    address_regex = re.compile(
-        r"(?P<street_name>[\w\s.]+?),\s(?:д\.?|дом)\s*(?P<start_house>\d+)(?:[-–](?P<end_house>\d+))?(?:\sкорп\.\d+)?"
-    )
+    address_pattern = ADDRESS_DEFAULT_PATTERN
 
-    def __init__(self, city: SupportedCity, address: str) -> None:
-        self.address = address
-        self.street, self.house = self.get_street_and_house(address)
+    def __init__(self, city: SupportedCity) -> None:
         self.urls = RESOURCE_URLS[city]
         self.city = city
         self.finish_time_filter = datetime.now(timezone.utc) + timedelta(days=30)
         self.date_start = datetime.fromisoformat("2024-05-30")
 
-    def parse(self, service: SupportedService) -> dict[str, Any] | None:
-        logger.debug(f"Parsing for service: {service} ({self.address})")
+    def parse(self, service: SupportedService, address: Address) -> dict[str, Any] | None:
+        street, house = address.street, address.house
+        logger.debug(f"Parsing for service: {service} ({address})")
         parsed_data = self._parse_website(service)
         logger.debug("Parsed data %s | \n%s", service, parsed_data)
-        if found_items := parsed_data.get(self.street):
-            logger.info("Found items for requested address:%s | %s", self.address, found_items)
+        if found_items := parsed_data.get(street):
+            logger.info("Found items for requested address:%s | %s", address, found_items)
             return found_items
 
         return None
 
-    def _get_content(self, service: SupportedService) -> str:
+    def _get_content(self, service: SupportedService, address: Address) -> str:
         url = self.urls[service].format(
             city=urllib.parse.quote_plus(CITY_NAME_MAP[self.city]),
-            street=urllib.parse.quote_plus(self.street.encode()) if self.street else "",
+            street=urllib.parse.quote_plus(address.street.encode()) if address.street else "",
             date_start=self._format_date(self.date_start),
             date_finish=self._format_date(self.finish_time_filter),
         )
@@ -86,8 +84,8 @@ class Parser:
                 print(date_start, time_start, date_end, time_end)
                 print("---")
                 for street in streets:
-                    street_name, houses = self.get_street_and_house(
-                        street.replace("\n", "").strip()
+                    street_name, houses = get_street_and_house(
+                        pattern=self.address_pattern, address=street.replace("\n", "").strip()
                     )
                     result[street_name].append(
                         {
@@ -102,15 +100,7 @@ class Parser:
 
     @classmethod
     def get_street_and_house(cls, address: str) -> tuple[str, list[int]]:
-        match = cls.address_regex.search(address)
-        if match:
-            street_name = match.group("street_name").strip()
-            start_house = int(match.group("start_house"))
-            end_house = int(match.group("end_house")) if match.group("end_house") else start_house
-            houses = list(range(start_house, end_house + 1))
-            return street_name, houses
-        else:
-            return "Unknown", []
+        return get_street_and_house(address, cls.address_pattern)
 
     @staticmethod
     def _format_date(date: datetime) -> str:
