@@ -1,6 +1,6 @@
 import pytest
 
-from src.parsing.main import Parser
+from src.utils import get_street_and_house
 
 
 @pytest.mark.parametrize(
@@ -29,5 +29,5 @@ from src.parsing.main import Parser
     ],
 )
 def test_extract_street_and_house_info(address, expected_result):
-    street, houses = Parser.get_street_and_house(address)
+    street, houses = get_street_and_house(address)
     assert {"street": street, "houses": houses} == expected_result
