@@ -20,19 +20,22 @@ class Parser:
     date_format = "%d.%m.%Y"
     address_pattern = ADDRESS_DEFAULT_PATTERN
 
-    def __init__(self, city: SupportedCity) -> None:
+    def __init__(
+        self,
+        city: SupportedCity,
+    ) -> None:
         self.urls = RESOURCE_URLS[city]
         self.city = city
         self.finish_time_filter = datetime.now(timezone.utc) + timedelta(days=30)
         self.date_start = datetime.fromisoformat("2024-05-30")
 
-    def parse(self, service: SupportedService, address: Address) -> dict[str, Any] | None:
-        street, house = address.street, address.house
-        logger.debug(f"Parsing for service: {service} ({address})")
-        parsed_data = self._parse_website(service)
+    def parse(self, service: SupportedService, user_address: Address) -> dict[str, Any] | None:
+        street, house = user_address.street, user_address.house
+        logger.debug(f"Parsing for service: {service} ({user_address})")
+        parsed_data = self._parse_website(service, user_address) or {}
         logger.debug("Parsed data %s | \n%s", service, parsed_data)
         if found_items := parsed_data.get(street):
-            logger.info("Found items for requested address:%s | %s", address, found_items)
+            logger.info("Found items for requested address:%s | %s", user_address, found_items)
             return found_items
 
         return None
@@ -59,7 +62,9 @@ class Parser:
         tmp_file_path.write_text(response_data)
         return response_data
 
-    def _parse_website(self, service: SupportedService) -> dict[str, list[dict]] | None:
+    def _parse_website(
+        self, service: SupportedService, address: Address
+    ) -> dict[str, list[dict]] | None:
         """
         Parses websites by URL's provided in params
 
@@ -67,7 +72,7 @@ class Parser:
         :return: given data from website
         """
 
-        html_content = self._get_content(service)
+        html_content = self._get_content(service, address)
         tree = html.fromstring(html_content)
         rows = tree.xpath("//table/tbody/tr")
         if not rows:
@@ -97,10 +102,6 @@ class Parser:
 
         pprint.pprint(result, indent=4)
         return result
-
-    @classmethod
-    def get_street_and_house(cls, address: str) -> tuple[str, list[int]]:
-        return get_street_and_house(address, cls.address_pattern)
 
     @staticmethod
     def _format_date(date: datetime) -> str:
