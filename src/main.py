@@ -21,12 +21,11 @@ def main():
     user = User(
         id=uuid.uuid4(),
         name="TestUser",
-        address=args.address,
-        address_street="TestStreet",
-        address_house=45,
+        city=SupportedCity.SPB,
+        raw_address=args.address,
     )
-    service_data_parser = Parser(city=SupportedCity.SPB, address=user.address)
-    result = service_data_parser.parse(SupportedService.ELECTRICITY)
+    service_data_parser = Parser(city=user.address.city)
+    result = service_data_parser.parse(SupportedService.ELECTRICITY, user_address=user.address)
     logger.info(f"Parse Result: \n{result}")
     user.send_notification(result)
 

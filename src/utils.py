@@ -5,9 +5,16 @@ ADDRESS_DEFAULT_PATTERN = re.compile(
 )
 
 
-def get_street_and_house(address: str, pattern: re.Pattern[str] | None) -> tuple[str, list[int]]:
+def get_street_and_house(
+    address: str,
+    pattern: re.Pattern[str] | None = None,
+) -> tuple[str, list[int]]:
     """
     Searches street and house (or houses' range) from given string
+
+    :param address: some string containing address with street and house (maybe range of houses)
+    :param pattern: regexp's pattern for fetching street/houses from that
+    :return <tuple> like ("My Street", [12]) or ("My Street", [12, 13, 14, 15])
     """
     if match := (pattern or ADDRESS_DEFAULT_PATTERN).search(address):
         street_name = match.group("street_name").strip()
