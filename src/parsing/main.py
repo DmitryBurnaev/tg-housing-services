@@ -9,9 +9,9 @@ from datetime import datetime, timezone, timedelta
 import httpx
 from lxml import html
 
-from src.config.app import RESOURCE_URLS, SupportedCity, SupportedService, CITY_NAME_MAP, DATA_PATH
 from src.db.models import Address
 from src.utils import get_street_and_house, ADDRESS_DEFAULT_PATTERN
+from src.config.app import RESOURCE_URLS, SupportedCity, SupportedService, CITY_NAME_MAP, DATA_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 class Parser:
     date_format = "%d.%m.%Y"
     address_pattern = ADDRESS_DEFAULT_PATTERN
+    max_days_filter = 30
 
     def __init__(
         self,
@@ -26,10 +27,22 @@ class Parser:
     ) -> None:
         self.urls = RESOURCE_URLS[city]
         self.city = city
-        self.finish_time_filter = datetime.now(timezone.utc) + timedelta(days=30)
-        self.date_start = datetime.fromisoformat("2024-05-30")
+        self.finish_time_filter = datetime.now(timezone.utc) + timedelta(days=self.max_days_filter)
+        self.date_start = datetime.now().date()
+        # self.date_start = datetime.fromisoformat("2024-05-30")
 
     def parse(self, service: SupportedService, user_address: Address) -> dict[str, Any] | None:
+        """
+        Allows to fetch shouting down info from supported service and format by requested address
+
+
+        Args:
+            service: requested Service
+            user_address: current user's address
+
+        Returns:
+            dict with mapping: user-address -> list of dates
+        """
         street, house = user_address.street, user_address.house
         logger.debug(f"Parsing for service: {service} ({user_address})")
         parsed_data = self._parse_website(service, user_address) or {}
