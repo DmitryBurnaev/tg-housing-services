@@ -4,7 +4,7 @@ import logging
 import urllib.parse
 from collections import defaultdict
 from typing import Any
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 
 import httpx
 from lxml import html
@@ -19,17 +19,14 @@ logger = logging.getLogger(__name__)
 class Parser:
     date_format = "%d.%m.%Y"
     address_pattern = ADDRESS_DEFAULT_PATTERN
-    max_days_filter = 30
+    max_days_filter = 90
 
-    def __init__(
-        self,
-        city: SupportedCity,
-    ) -> None:
+    def __init__(self, city: SupportedCity) -> None:
         self.urls = RESOURCE_URLS[city]
         self.city = city
         self.finish_time_filter = datetime.now(timezone.utc) + timedelta(days=self.max_days_filter)
-        self.date_start = datetime.now().date()
-        # self.date_start = datetime.fromisoformat("2024-05-30")
+        # self.date_start = datetime.now().date()
+        self.date_start = datetime.fromisoformat("2024-06-01")
 
     def parse(self, service: SupportedService, user_address: Address) -> dict[str, Any] | None:
         """
@@ -55,7 +52,7 @@ class Parser:
 
     def _get_content(self, service: SupportedService, address: Address) -> str:
         url = self.urls[service].format(
-            city=urllib.parse.quote_plus(CITY_NAME_MAP[self.city]),
+            city="",
             street=urllib.parse.quote_plus(address.street.encode()) if address.street else "",
             date_start=self._format_date(self.date_start),
             date_finish=self._format_date(self.finish_time_filter),
@@ -117,8 +114,8 @@ class Parser:
         return result
 
     @staticmethod
-    def _format_date(date: datetime) -> str:
-        return date.date().strftime("%d.%m.%Y")
+    def _format_date(date: datetime | date) -> str:
+        return date.strftime("%d.%m.%Y")
 
     def _prepare_time(self, date: str, time: str) -> datetime | None:
         date = self._clear_string(date)
