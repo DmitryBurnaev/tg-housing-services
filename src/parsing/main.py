@@ -90,18 +90,38 @@ class Parser:
             return None
 
         result = defaultdict(list)
+        streets_data = []
         for row in rows:
             if row_streets := row.xpath(".//td[@class='rowStreets']"):
                 streets = row_streets[0].xpath(".//span/text()")
-                dates = row.xpath("td/text()")[5:9]
-                print(dates)
-                date_start, time_start, date_end, time_end = dates
-                print(date_start, time_start, date_end, time_end)
+                dates = row.xpath("td/text()")[4:8]
+                date_start, time_start, date_end, time_end = map(self._clear_string, dates)
                 print("---")
-                for street in streets:
-                    street_name, houses = get_street_and_house(
-                        pattern=self.address_pattern, address=street.replace("\n", "").strip()
+                print(date_start, time_start, date_end, time_end)
+                if len(streets) == 1:
+                    streets = streets[0]
+                else:
+                    logger.warning(
+                        "Streets count more than 1: %(service)s | %(address)s",
+                        {"service": service, "address": address},
                     )
+                    streets = ",".join(streets)
+                streets_data = []
+                for street in streets.split(","):
+                    street_name, houses = get_street_and_house(
+                        pattern=self.address_pattern, address=self._clear_string(street)
+                    )
+                    streets_data.append(
+                        "%s | %s | %s | %s | %s"
+                        % (
+                            self._clear_string(street),
+                            street_name,
+                            houses,
+                            self._prepare_time(date_start, time_start).isoformat(),
+                            self._prepare_time(date_end, time_end).isoformat(),
+                        )
+                    )
+                    # TODO: don't collect by street_name (we already known full address here)
                     result[street_name].append(
                         {
                             "houses": houses,
@@ -109,8 +129,8 @@ class Parser:
                             "end": self._prepare_time(date_end, time_end),
                         }
                     )
-
-        pprint.pprint(result, indent=4)
+        print("\n".join(streets_data))
+        # pprint.pprint(result, indent=4)
         return result
 
     @staticmethod
