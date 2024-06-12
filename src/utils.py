@@ -1,7 +1,7 @@
 import re
 
 ADDRESS_DEFAULT_PATTERN = re.compile(
-    r"(?P<street_name>[\w\s.]+?),\s(?:д\.?|дом)\s*(?P<start_house>\d+)(?:[-–](?P<end_house>\d+))?(?:\sкорп\.\d+)?"
+    r"(?P<street_name>[\w\s.]+?),?\s(?:д\.?|дом)\s*(?P<start_house>\d+)(?:[-–](?P<end_house>\d+))?(?:\sкорп\.\d+)?"
 )
 
 
