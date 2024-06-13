@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta, date
 import httpx
 from lxml import html
 
-from src.db.models import Address
+from src.db.models import Address, DateRange
 from src.utils import get_street_and_house, ADDRESS_DEFAULT_PATTERN
 from src.config.app import RESOURCE_URLS, SupportedCity, SupportedService, CITY_NAME_MAP, DATA_PATH
 
@@ -73,7 +73,9 @@ class Parser:
         return response_data
 
     def _parse_website(
-        self, service: SupportedService, address: Address
+        self,
+        service: SupportedService,
+        address: Address,
     ) -> dict[str, list[dict]] | None:
         """
         Parses websites by URL's provided in params
@@ -90,14 +92,13 @@ class Parser:
             return None
 
         result = defaultdict(list)
-        streets_data = []
+
         for row in rows:
             if row_streets := row.xpath(".//td[@class='rowStreets']"):
                 streets = row_streets[0].xpath(".//span/text()")
                 dates = row.xpath("td/text()")[4:8]
                 date_start, time_start, date_end, time_end = map(self._clear_string, dates)
-                print("---")
-                print(date_start, time_start, date_end, time_end)
+
                 if len(streets) == 1:
                     streets = streets[0]
                 else:
@@ -106,31 +107,30 @@ class Parser:
                         {"service": service, "address": address},
                     )
                     streets = ",".join(streets)
-                streets_data = []
+
+                start_time = self._prepare_time(date_start, time_start)
+                end_time = self._prepare_time(date_end, time_end)
                 for street in streets.split(","):
                     street_name, houses = get_street_and_house(
                         pattern=self.address_pattern, address=self._clear_string(street)
                     )
-                    streets_data.append(
-                        "%s | %s | %s | %s | %s"
-                        % (
-                            self._clear_string(street),
-                            street_name,
-                            houses,
-                            self._prepare_time(date_start, time_start).isoformat(),
-                            self._prepare_time(date_end, time_end).isoformat(),
-                        )
-                    )
-                    # TODO: don't collect by street_name (we already known full address here)
-                    result[street_name].append(
+                    logger.debug(
+                        "Parsing [%(service)s] Found record: raw: "
+                        "%(raw_street)s | %(street_name)s | %(houses)s | %(start)s | %(end)s",
                         {
+                            "service": service,
+                            "raw_street": self._clear_string(street),
+                            "street_name": street_name,
                             "houses": houses,
-                            "start": self._prepare_time(date_start, time_start),
-                            "end": self._prepare_time(date_end, time_end),
-                        }
+                            "start": start_time.isoformat(),
+                            "end": end_time.isoformat(),
+                        },
                     )
-        print("\n".join(streets_data))
-        # pprint.pprint(result, indent=4)
+                    for house in houses:
+                        address_key = Address(city=self.city, street=street_name, house=house)
+                        result[address_key].append(DateRange(start_time, end_time))
+
+        pprint.pprint(result, indent=4)
         return result
 
     @staticmethod

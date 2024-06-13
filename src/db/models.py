@@ -1,4 +1,5 @@
 import dataclasses
+import datetime
 import uuid
 from typing import NamedTuple
 
@@ -9,7 +10,12 @@ from src.utils import get_street_and_house
 class Address(NamedTuple):
     city: SupportedCity
     street: str
-    house: int | None
+    house: int
+
+
+class DateRange(NamedTuple):
+    start: datetime.datetime
+    end: datetime.datetime
 
 
 @dataclasses.dataclass
@@ -23,7 +29,7 @@ class User:
     def __post_init__(self):
         street, houses = get_street_and_house(self.raw_address)
         house = houses[0] if houses else None
-        self.address = Address(street=street, house=house, city=self.city)
+        self.address = Address(city=self.city, street=street, house=house)
 
     def send_notification(self, data: dict) -> None:
         print(f"hello, {self.name}! there is your update: {data}")
