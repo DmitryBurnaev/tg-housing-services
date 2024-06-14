@@ -4,14 +4,14 @@ import logging
 import urllib.parse
 from collections import defaultdict
 from typing import Any
-from datetime import datetime, timezone, timedelta, date
+from datetime import datetime, timedelta, date
 
 import httpx
 from lxml import html
 
 from src.db.models import Address, DateRange
 from src.utils import get_street_and_house, ADDRESS_DEFAULT_PATTERN
-from src.config.app import RESOURCE_URLS, SupportedCity, SupportedService, CITY_NAME_MAP, DATA_PATH
+from src.config.app import RESOURCE_URLS, SupportedCity, SupportedService, DATA_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,9 @@ class Parser:
     def __init__(self, city: SupportedCity) -> None:
         self.urls = RESOURCE_URLS[city]
         self.city = city
-        self.finish_time_filter = datetime.now(timezone.utc) + timedelta(days=self.max_days_filter)
+        self.finish_time_filter = datetime.fromisoformat("2024-06-13") + timedelta(
+            days=self.max_days_filter
+        )
         # self.date_start = datetime.now().date()
         self.date_start = datetime.fromisoformat("2024-06-01")
 
@@ -40,13 +42,13 @@ class Parser:
         Returns:
             dict with mapping: user-address -> list of dates
         """
-        street, house = user_address.street, user_address.house
+        # street, house = user_address.street, user_address.house
         logger.debug(f"Parsing for service: {service} ({user_address})")
         parsed_data = self._parse_website(service, user_address) or {}
         logger.debug("Parsed data %s | \n%s", service, parsed_data)
-        if found_items := parsed_data.get(street):
-            logger.info("Found items for requested address:%s | %s", user_address, found_items)
-            return found_items
+        # if found_items := parsed_data.get(street):
+        #     logger.info("Found items for requested address:%s | %s", user_address, found_items)
+        #     return found_items
 
         return None
 
@@ -76,7 +78,7 @@ class Parser:
         self,
         service: SupportedService,
         address: Address,
-    ) -> dict[str, list[dict]] | None:
+    ) -> dict[Address, set[dict]] | None:
         """
         Parses websites by URL's provided in params
 
@@ -91,35 +93,36 @@ class Parser:
             logger.info("No data found for service: %s", service)
             return None
 
-        result = defaultdict(list)
+        result = defaultdict(set)
 
         for row in rows:
             if row_streets := row.xpath(".//td[@class='rowStreets']"):
-                streets = row_streets[0].xpath(".//span/text()")
+                addresses = row_streets[0].xpath(".//span/text()")
                 dates = row.xpath("td/text()")[4:8]
                 date_start, time_start, date_end, time_end = map(self._clear_string, dates)
 
-                if len(streets) == 1:
-                    streets = streets[0]
+                if len(addresses) == 1:
+                    addresses = addresses[0]
                 else:
                     logger.warning(
                         "Streets count more than 1: %(service)s | %(address)s",
                         {"service": service, "address": address},
                     )
-                    streets = ",".join(streets)
+                    addresses = ",".join(addresses)
 
                 start_time = self._prepare_time(date_start, time_start)
                 end_time = self._prepare_time(date_end, time_end)
-                for street in streets.split(","):
+                for raw_address in addresses.split(","):
+                    raw_address = self._clear_string(raw_address)
                     street_name, houses = get_street_and_house(
-                        pattern=self.address_pattern, address=self._clear_string(street)
+                        pattern=self.address_pattern, address=raw_address
                     )
                     logger.debug(
                         "Parsing [%(service)s] Found record: raw: "
                         "%(raw_street)s | %(street_name)s | %(houses)s | %(start)s | %(end)s",
                         {
                             "service": service,
-                            "raw_street": self._clear_string(street),
+                            "raw_street": self._clear_string(raw_address),
                             "street_name": street_name,
                             "houses": houses,
                             "start": start_time.isoformat(),
@@ -127,8 +130,10 @@ class Parser:
                         },
                     )
                     for house in houses:
-                        address_key = Address(city=self.city, street=street_name, house=house)
-                        result[address_key].append(DateRange(start_time, end_time))
+                        address_key = Address(
+                            city=self.city, street=street_name, house=house, raw=raw_address
+                        )
+                        result[address_key].add(DateRange(start_time, end_time))
 
         pprint.pprint(result, indent=4)
         return result
