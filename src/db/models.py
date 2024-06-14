@@ -11,6 +11,7 @@ class Address(NamedTuple):
     city: SupportedCity
     street: str
     house: int
+    raw: str
 
 
 class DateRange(NamedTuple):
@@ -29,7 +30,7 @@ class User:
     def __post_init__(self):
         street, houses = get_street_and_house(self.raw_address)
         house = houses[0] if houses else None
-        self.address = Address(city=self.city, street=street, house=house)
+        self.address = Address(city=self.city, street=street, house=house, raw=self.raw_address)
 
     def send_notification(self, data: dict) -> None:
         print(f"hello, {self.name}! there is your update: {data}")
