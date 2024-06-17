@@ -13,6 +13,12 @@ class Address(NamedTuple):
     house: int
     raw: str
 
+    def __eq__(self, other: "Address") -> bool:
+        # TODO: replace with regular expression
+        street = self.street.replace("пр.", "").replace("ул.", "").strip()
+        other_street = other.street.strip()
+        return self.city == other.city and street == other_street and self.house == other.house
+
 
 class DateRange(NamedTuple):
     start: datetime.datetime
@@ -32,5 +38,5 @@ class User:
         house = houses[0] if houses else None
         self.address = Address(city=self.city, street=street, house=house, raw=self.raw_address)
 
-    def send_notification(self, data: dict) -> None:
-        print(f"hello, {self.name}! there is your update: {data}")
+    def send_notification(self, date_ranges: dict[Address, set[DateRange]]) -> None:
+        print(f"hello, {self.name}! Your Address: {self.address} | your dates: {date_ranges}")
