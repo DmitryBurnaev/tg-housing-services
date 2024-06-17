@@ -30,7 +30,9 @@ class Parser:
         # self.date_start = datetime.now().date()
         self.date_start = datetime.fromisoformat("2024-06-01")
 
-    def parse(self, service: SupportedService, user_address: Address) -> dict[str, Any] | None:
+    def parse(
+        self, service: SupportedService, user_address: Address
+    ) -> dict[Address, set[DateRange]]:
         """
         Allows to fetch shouting down info from supported service and format by requested address
 
@@ -42,15 +44,16 @@ class Parser:
         Returns:
             dict with mapping: user-address -> list of dates
         """
-        # street, house = user_address.street, user_address.house
         logger.debug(f"Parsing for service: {service} ({user_address})")
         parsed_data = self._parse_website(service, user_address) or {}
         logger.debug("Parsed data %s | \n%s", service, parsed_data)
-        # if found_items := parsed_data.get(street):
-        #     logger.info("Found items for requested address:%s | %s", user_address, found_items)
-        #     return found_items
 
-        return None
+        found_ranges: dict[Address, set[DateRange]] = {}
+        for address, date_ranges in parsed_data.items():
+            if address == user_address:
+                found_ranges[address] = date_ranges
+
+        return found_ranges
 
     def _get_content(self, service: SupportedService, address: Address) -> str:
         url = self.urls[service].format(
@@ -78,7 +81,7 @@ class Parser:
         self,
         service: SupportedService,
         address: Address,
-    ) -> dict[Address, set[dict]] | None:
+    ) -> dict[Address, set[DateRange]] | None:
         """
         Parses websites by URL's provided in params
 
