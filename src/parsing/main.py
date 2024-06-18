@@ -3,7 +3,6 @@ import hashlib
 import logging
 import urllib.parse
 from collections import defaultdict
-from typing import Any
 from datetime import datetime, timedelta, date
 
 import httpx
@@ -50,7 +49,7 @@ class Parser:
 
         found_ranges: dict[Address, set[DateRange]] = {}
         for address, date_ranges in parsed_data.items():
-            if address == user_address:
+            if address.matches(user_address):
                 found_ranges[address] = date_ranges
 
         return found_ranges
@@ -81,7 +80,7 @@ class Parser:
         self,
         service: SupportedService,
         address: Address,
-    ) -> dict[Address, set[DateRange]] | None:
+    ) -> dict[Address, set[DateRange]]:
         """
         Parses websites by URL's provided in params
 
@@ -94,7 +93,7 @@ class Parser:
         rows = tree.xpath("//table/tbody/tr")
         if not rows:
             logger.info("No data found for service: %s", service)
-            return None
+            return {}
 
         result = defaultdict(set)
 
@@ -122,10 +121,10 @@ class Parser:
                     )
                     logger.debug(
                         "Parsing [%(service)s] Found record: raw: "
-                        "%(raw_street)s | %(street_name)s | %(houses)s | %(start)s | %(end)s",
+                        "%(raw_address)s | %(street_name)s | %(houses)s | %(start)s | %(end)s",
                         {
                             "service": service,
-                            "raw_street": self._clear_string(raw_address),
+                            "raw_address": raw_address,
                             "street_name": street_name,
                             "houses": houses,
                             "start": start_time.isoformat(),
@@ -139,6 +138,7 @@ class Parser:
                         result[address_key].add(DateRange(start_time, end_time))
 
         pprint.pprint(result, indent=4)
+        print("======")
         return result
 
     @staticmethod
