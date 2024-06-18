@@ -7,20 +7,32 @@ from src.utils import get_street_and_house
     "address, expected_result",
     [
         (
-            "Test Street пр., д.75 корп.1",
-            {"street": "Test Street пр.", "houses": [75]},
+            "Avenue Name пр., д.75 корп.1",
+            {"street": "Avenue Name пр.", "houses": [75]},
         ),
         (
-            "Test Street пр., д.75-79",
-            {"street": "Test Street пр.", "houses": [75, 76, 77, 78, 79]},
+            "пр. Avenue Name         , д.75 корп.1",
+            {"street": "Avenue Name", "houses": [75]},
         ),
         (
-            "Test Street пр., д.79",
-            {"street": "Test Street пр.", "houses": [79]},
+            "ул. Street Name, д.75",
+            {"street": "Street Name", "houses": [75]},
         ),
         (
-            "Test Street пр., дом 75",
-            {"street": "Test Street пр.", "houses": [75]},
+            "тракт Street Name, д.75",
+            {"street": "Street Name", "houses": [75]},
+        ),
+        (
+            "Avenue Name пр., д.75-79",
+            {"street": "Avenue Name пр.", "houses": [75, 76, 77, 78, 79]},
+        ),
+        (
+            "Avenue Name пр., д.79",
+            {"street": "Avenue Name пр.", "houses": [79]},
+        ),
+        (
+            "Avenue Name пр., дом 75",
+            {"street": "Avenue Name пр.", "houses": [75]},
         ),
         (
             "Invalid Address Format",

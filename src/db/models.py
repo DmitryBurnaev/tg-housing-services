@@ -13,16 +13,28 @@ class Address(NamedTuple):
     house: int
     raw: str
 
-    def __eq__(self, other: "Address") -> bool:
-        # TODO: replace with regular expression
-        street = self.street.replace("пр.", "").replace("ул.", "").strip()
-        other_street = other.street.strip()
-        return self.city == other.city and street == other_street and self.house == other.house
+    def matches(self, other: "Address") -> bool:
+        return all(
+            [
+                self.city == other.city,
+                self.street == other.street,
+                self.house == other.house,
+            ]
+        )
 
 
 class DateRange(NamedTuple):
     start: datetime.datetime
     end: datetime.datetime
+
+    def __gt__(self, other: datetime.datetime) -> bool:
+        return self.end.astimezone(datetime.timezone.utc) > other
+
+    def __lt__(self, other: datetime.datetime) -> bool:
+        return self.end.astimezone(datetime.timezone.utc) < other
+
+    def __str__(self) -> str:
+        return f"{self.start.isoformat()} - {self.end.isoformat()}"
 
 
 @dataclasses.dataclass
@@ -39,4 +51,14 @@ class User:
         self.address = Address(city=self.city, street=street, house=house, raw=self.raw_address)
 
     def send_notification(self, date_ranges: dict[Address, set[DateRange]]) -> None:
-        print(f"hello, {self.name}! Your Address: {self.address} | your dates: {date_ranges}")
+        print(f"[{self.name}] === {self.address.raw} ===")
+        now_time = datetime.datetime.now(datetime.timezone.utc)
+        for address, date_ranges in date_ranges.items():
+            actual_ranges = []
+            for date_range in date_ranges:
+                if date_range > now_time:
+                    actual_ranges.append(date_range)
+
+            if actual_ranges:
+                print(f" - {address}")
+                print(f"   - {'\n   - '.join(map(str, actual_ranges))}")
