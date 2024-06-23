@@ -9,10 +9,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import (
-    Message,
-    ReplyKeyboardRemove,
-)
+from aiogram.types import Message, ReplyKeyboardRemove
 
 TOKEN = getenv("BOT_TOKEN")
 
@@ -55,12 +52,10 @@ async def info_handler(message: Message, state: FSMContext) -> None:
     """
     Allow user to cancel any action
     """
-    data = await state.get_data()
-
-    echo_addresses = "\n - ".join(data.get("addresses", []))
+    echo_addresses = _fetch_addresses(state)
     await message.answer(
         f"Hi, {html.bold(message.from_user.full_name)}!`\n`"
-        f"I remember your address:\n - {echo_addresses}",
+        f"I remember your address:\n{echo_addresses}",
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -75,7 +70,8 @@ async def add_address(message: Message, state: FSMContext) -> None:
     await state.update_data(address=addresses)
     await state.set_state(state=None)
     await message.answer(
-        f"Ok, I'll remember your address, {html.bold(message.from_user.full_name)}!\n - {echo_addresses}",
+        f"Ok, I'll remember your address, {html.bold(message.from_user.full_name)}! "
+        f"\nYour Addresses:\n{echo_addresses}",
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -97,12 +93,21 @@ async def shutdowns_handler(message: Message, state: FSMContext) -> None:
     """
     Allow user to cancel any action
     """
-    data = await state.get_data()
-    echo_addresses = "\n - ".join(data.get("addresses", []))
+    echo_addresses = _fetch_addresses(state)
     await message.answer(
-        f"Ok, I'll return future shutdowns for your addresses:\n - {echo_addresses}",
+        f"Ok, I'll return future shutdowns for your addresses:\n{echo_addresses}",
         reply_markup=ReplyKeyboardRemove(),
     )
+
+
+async def _fetch_addresses(state: FSMContext) -> str:
+    data = await state.get_data()
+    echo_addresses = ""
+    if addresses := data.get("addresses") or []:
+        echo_addresses = "\n - "
+        echo_addresses += "\n - ".join(addresses)
+
+    return echo_addresses
 
 
 async def main() -> None:
