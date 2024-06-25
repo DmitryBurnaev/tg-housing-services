@@ -43,23 +43,13 @@ async def command_address(message: Message, state: FSMContext) -> None:
 
 
 @form_router.message(UserAddressStatesGroup.address, F.text.casefold() == "add address")
-async def add_address(message: Message, state: FSMContext) -> None:
-    new_address: str = message.text
-    state_data = await state.get_data()
-    addresses = state_data.get("address", None) or []
-    addresses.append(new_address)
-    echo_addresses = "\n - ".join(addresses)
-    await state.update_data(address=addresses)
-    await state.set_state(state=None)
-    await message.answer(
-        f"Ok, I'll remember your address, {html.bold(message.from_user.full_name)}! "
-        f"\nYour Addresses:\n{echo_addresses}",
-        reply_markup=ReplyKeyboardRemove(),
-    )
+async def add_address_command(message: Message, state: FSMContext) -> None:
+    await state.set_state(UserAddressStatesGroup.add_address)
+    await message.answer("Ok, Sent me your address (without city, default - SPB)", reply_markup=ReplyKeyboardRemove(),)
 
 
 @form_router.message(UserAddressStatesGroup.address, F.text.casefold() == "remove address")
-async def remove_address(message: Message, state: FSMContext) -> None:
+async def remove_address_command(message: Message, state: FSMContext) -> None:
     state_data = await state.get_data()
     await state.set_state(UserAddressStatesGroup.remove_address)
     await message.answer(
@@ -76,20 +66,30 @@ async def remove_address(message: Message, state: FSMContext) -> None:
     )
 
 
+@form_router.message(UserAddressStatesGroup.add_address)
+async def add_address_handler(message: Message, state: FSMContext) -> None:
+    new_address: str = message.text
+    state_data = await state.get_data()
+    addresses = state_data.get("address", None) or []
+    addresses.append(new_address)
+    echo_addresses = "\n - ".join(addresses)
+    await state.update_data(address=addresses)
+    await state.set_state(state=None)
+    await message.answer(
+        f"Ok, I'll remember your address, {html.bold(message.from_user.full_name)}! "
+        f"\nYour Addresses:\n{echo_addresses}",
+        reply_markup=ReplyKeyboardRemove(),
+    )
+
 @form_router.message(UserAddressStatesGroup.remove_address)
-async def remove_address(message: Message, state: FSMContext) -> None:
+async def remove_address_handler(message: Message, state: FSMContext) -> None:
     state_data = await state.get_data()
     new_addresses: list[str] = [
         address for address in state_data.get("address", None) or [] if address != message.text
     ]
     await state.update_data(address=new_addresses)
-
-    echo_addresses = "\n - ".join(new_addresses)
-    await message.answer(
-        f"Ok I removed chosen address from your list:\n",
-        f"\nYour Addresses:\n{echo_addresses}",
-        reply_markup=ReplyKeyboardRemove(),
-    )
+    await state.set_state(None)
+    await message.answer(f"OK. Address '{message.text}' was removed")
 
 
 @form_router.message(Command("cancel"))
@@ -112,10 +112,14 @@ async def info_handler(message: Message, state: FSMContext) -> None:
     """
     Allow user to cancel any action
     """
-    echo_addresses = _fetch_addresses(state)
+    echo_addresses = await _fetch_addresses(state)
+    if echo_addresses:
+        msg = f"I remember your address:\n{echo_addresses}"
+    else:
+        msg = f"I don't remember any your address. Could you add a first one?"
+
     await message.answer(
-        f"Hi, {html.bold(message.from_user.full_name)}!`\n`"
-        f"I remember your address:\n{echo_addresses}",
+        f"Hi, {html.bold(message.from_user.full_name)}!\n{msg}",
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -153,7 +157,7 @@ async def shutdowns_handler(message: Message, state: FSMContext) -> None:
     """
     Allow user to cancel any action
     """
-    echo_addresses = _fetch_addresses(state)
+    echo_addresses = await _fetch_addresses(state)
     await message.answer(
         f"Ok, I'll return future shutdowns for your addresses:\n{echo_addresses}",
         reply_markup=ReplyKeyboardRemove(),
