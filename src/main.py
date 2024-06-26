@@ -1,3 +1,7 @@
+"""
+The main function initializes a Bot instance with a specified token and
+default properties, then starts polling for updates using the Dispatcher.
+"""
 import asyncio
 import logging
 import sys
@@ -45,8 +49,10 @@ async def echo_handler(message: Message) -> None:
 
 
 async def main() -> None:
+    logging.info("Bot is starting up...")
     bot = Bot(token=TG_BOT_API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     await dp.start_polling(bot)
+    logging.info("Bot has started successfully.")
 
 
 if __name__ == "__main__":
