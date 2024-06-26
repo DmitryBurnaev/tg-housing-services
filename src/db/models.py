@@ -8,12 +8,23 @@ from src.utils import get_street_and_house
 
 
 class Address(NamedTuple):
+    """ Structural form of storing some user's address """
     city: SupportedCity
     street: str
     house: int
     raw: str
 
     def matches(self, other: "Address") -> bool:
+        """
+        Check if the given Address object matches with the current Address object.
+
+        Parameters:
+        - other (Address): The Address object to compare with.
+
+        Returns:
+            - bool: True if all attributes (city, street, house) of both Address objects match, 
+                    False otherwise.
+        """
         return all(
             [
                 self.city == other.city,

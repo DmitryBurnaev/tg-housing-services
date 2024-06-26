@@ -1,7 +1,11 @@
+"""
+This code snippet defines a Telegram bot using the aiogram library to manage user addresses 
+in a conversation flow. The bot uses FSMContext to manage the state of the conversation 
+and provides a structured way for users to interact with address-related commands.
+"""
 import asyncio
 import logging
 import sys
-from os import getenv
 
 from aiogram import Bot, Dispatcher, F, Router, html
 from aiogram.client.default import DefaultBotProperties
@@ -11,12 +15,20 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 
-TOKEN = getenv("BOT_TOKEN")
+from src.config.app import TG_BOT_API_TOKEN
 
 form_router = Router()
 
 
 class UserAddressStatesGroup(StatesGroup):
+    """
+    Represents the states group for managing user addresses in the conversation flow.
+
+    States:
+        - address: State representing the initial address state.
+        - add_address: State representing the state when the user wants to add an address.
+        - remove_address: State representing the state when the user wants to remove an address.
+    """
     address = State()
     add_address = State()
     remove_address = State()
@@ -29,7 +41,7 @@ async def command_address(message: Message, state: FSMContext) -> None:
     """
     await state.set_state(UserAddressStatesGroup.address)
     await message.answer(
-        f"What do you want?",
+        "What do you want?",
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
                 [
@@ -44,16 +56,43 @@ async def command_address(message: Message, state: FSMContext) -> None:
 
 @form_router.message(UserAddressStatesGroup.address, F.text.casefold() == "add address")
 async def add_address_command(message: Message, state: FSMContext) -> None:
+    """
+    Handle the 'add address' command from the user.
+    Transition the user's state to 'add_address' state.
+
+    Args:
+        message (Message): The message object representing the user's input.
+        state (FSMContext): The state context for the user.
+
+    Returns:
+        None
+    """
     await state.set_state(UserAddressStatesGroup.add_address)
-    await message.answer("Ok, Sent me your address (without city, default - SPB)", reply_markup=ReplyKeyboardRemove(),)
+    await message.answer(
+        "Ok, Sent me your address (without city, default - SPB)", 
+        reply_markup=ReplyKeyboardRemove(),
+    )
 
 
 @form_router.message(UserAddressStatesGroup.address, F.text.casefold() == "remove address")
 async def remove_address_command(message: Message, state: FSMContext) -> None:
+    """
+    Handle the "remove address" command from the user.
+    Update the state to 'remove_address' and prompt the user to select an address to remove.
+    In order to allow the user to select an address, 
+    the addresses are displayed as keyboard buttons.
+
+    Args:
+        message (Message): The message object representing the user's input.
+        state (FSMContext): The FSMContext object to manage the state of the conversation.
+
+    Returns:
+        None
+    """
     state_data = await state.get_data()
     await state.set_state(UserAddressStatesGroup.remove_address)
     await message.answer(
-        f"What address do you want to remove?",
+        "What address do you want to remove?",
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
                 [
@@ -68,6 +107,16 @@ async def remove_address_command(message: Message, state: FSMContext) -> None:
 
 @form_router.message(UserAddressStatesGroup.add_address)
 async def add_address_handler(message: Message, state: FSMContext) -> None:
+    """
+    Handles the user input for adding a new address during the conversation flow.
+
+    Parameters:
+        - message (Message): The message object containing the user input.
+        - state (FSMContext): The FSMContext object to manage the conversation state.
+
+    Returns:
+        None
+    """
     new_address: str = message.text
     state_data = await state.get_data()
     addresses = state_data.get("address", None) or []
@@ -83,6 +132,19 @@ async def add_address_handler(message: Message, state: FSMContext) -> None:
 
 @form_router.message(UserAddressStatesGroup.remove_address)
 async def remove_address_handler(message: Message, state: FSMContext) -> None:
+    """
+    Handle the removal of an address from the user's list of addresses.
+    Function removes the specified address from the user's list stored in the conversation state. 
+    It updates the state data accordingly and sends a confirmation message to the user.
+
+    Parameters:
+        - message (Message): The message object triggering the handler.
+        - state (FSMContext): The current state of the conversation flow.
+
+    Returns:
+        None
+    
+    """
     state_data = await state.get_data()
     new_addresses: list[str] = [
         address for address in state_data.get("address", None) or [] if address != message.text
@@ -110,13 +172,19 @@ async def cancel_handler(message: Message, state: FSMContext) -> None:
 @form_router.message(Command("info"))
 async def info_handler(message: Message, state: FSMContext) -> None:
     """
-    Allow user to cancel any action
+    Handles showing user's current address and other common information
+    Parameters:
+        - message (Message): The message object.
+        - state (FSMContext): The current state of the conversation.
+
+    Returns:
+        None
     """
     echo_addresses = await _fetch_addresses(state)
     if echo_addresses:
         msg = f"I remember your address:\n{echo_addresses}"
     else:
-        msg = f"I don't remember any your address. Could you add a first one?"
+        msg = "I don't remember any your address. Could you add a first one?"
 
     await message.answer(
         f"Hi, {html.bold(message.from_user.full_name)}!\n{msg}",
@@ -126,6 +194,16 @@ async def info_handler(message: Message, state: FSMContext) -> None:
 
 @form_router.message(UserAddressStatesGroup.add_address)
 async def add_address(message: Message, state: FSMContext) -> None:
+    """
+    Handles the user input to add a new address to the conversation flow.
+
+    Parameters:
+        - message (Message): The message object containing the user input.
+        - state (FSMContext): The state context to manage the conversation flow.
+
+    Returns:
+        None
+    """
     new_address: str = message.text
     state_data = await state.get_data()
     addresses = state_data.get("address", None) or []
@@ -143,7 +221,16 @@ async def add_address(message: Message, state: FSMContext) -> None:
 @form_router.message(Command("clear"))
 async def clear_handler(message: Message, state: FSMContext) -> None:
     """
-    Allow user to cancel any action
+    This handler clears the state of the conversation and sends a message to the user 
+    indicating that all data has been forgotten.
+
+    Parameters:
+        - message (Message): The message object triggering the handler
+        - state (FSMContext): The current state of the conversation
+
+    Returns:
+        - None
+
     """
     await state.clear()
     await message.answer(
@@ -155,7 +242,15 @@ async def clear_handler(message: Message, state: FSMContext) -> None:
 @form_router.message(Command("shutdowns"))
 async def shutdowns_handler(message: Message, state: FSMContext) -> None:
     """
-    Allow user to cancel any action
+    Handle the 'shutdowns' command by fetching addresses from the current state and 
+    sending a response message to the user.
+
+    Parameters:
+        - message (Message): The message object triggering the command.
+        - state (FSMContext): The current state of the conversation.
+
+    Returns:
+        - None
     """
     echo_addresses = await _fetch_addresses(state)
     await message.answer(
@@ -178,7 +273,7 @@ async def main() -> None:
     """
     Initialize Bot instance with default bot properties which will be passed to all API calls
     """
-    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    bot = Bot(token=TG_BOT_API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
     dp.include_router(form_router)
     await dp.start_polling(bot)
