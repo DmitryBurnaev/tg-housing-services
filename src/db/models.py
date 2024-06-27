@@ -8,7 +8,8 @@ from src.utils import get_street_and_house
 
 
 class Address(NamedTuple):
-    """ Structural form of storing some user's address """
+    """Structural form of storing some user's address"""
+
     city: SupportedCity
     street: str
     house: int
@@ -22,7 +23,7 @@ class Address(NamedTuple):
         - other (Address): The Address object to compare with.
 
         Returns:
-            - bool: True if all attributes (city, street, house) of both Address objects match, 
+            - bool: True if all attributes (city, street, house) of both Address objects match,
                     False otherwise.
         """
         return all(
