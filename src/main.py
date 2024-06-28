@@ -17,6 +17,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 
 from src.config.app import TG_BOT_API_TOKEN
+from src.db.storage import TGStorage
 
 form_router = Router()
 
@@ -296,7 +297,7 @@ async def main() -> None:
     Initialize Bot instance with default bot properties which will be passed to all API calls
     """
     bot = Bot(token=TG_BOT_API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-    dp = Dispatcher()
+    dp = Dispatcher(storage=TGStorage())
     dp.include_router(form_router)
     await dp.start_polling(bot)
 
