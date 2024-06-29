@@ -35,3 +35,5 @@ CITY_NAME_MAP = {
 TG_BOT_API_TOKEN = os.getenv("TG_BOT_API_TOKEN")
 TG_TEST_USERS_LIST = os.getenv("TG_TEST_USERS_LIST", "").split(",")
 TG_TEST_CHAT_IDS = os.getenv("TG_TEST_CHAT_IDS", "").split(",")
+
+TMP_DATA_DIR = PROJECT_PATH.parent / ".data"
