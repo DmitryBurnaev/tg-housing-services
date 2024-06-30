@@ -98,7 +98,10 @@ async def remove_address_command(message: Message, state: FSMContext) -> None:
         "What address do you want to remove?",
         reply_markup=ReplyKeyboardMarkup(
             keyboard=[
-                [KeyboardButton(text=address) for address in state_data.get("address", None) or []]
+                [
+                    KeyboardButton(text=address)
+                    for address in state_data.get("addresses", None) or []
+                ]
             ],
             resize_keyboard=True,
         ),
@@ -118,10 +121,9 @@ async def add_address_handler(message: Message, state: FSMContext) -> None:
         None
     """
     new_address: str = message.text
-    state_data = await state.get_data()
-    addresses = state_data.get("address", None) or []
+    addresses = await _get_addresses(state)
     addresses.append(new_address)
-    await state.update_data(address=addresses)
+    await state.update_data(addresses=addresses)
     await state.set_state(state=None)
 
     echo_addresses = await _fetch_addresses(state)
@@ -147,12 +149,11 @@ async def remove_address_handler(message: Message, state: FSMContext) -> None:
         None
 
     """
-    state_data = await state.get_data()
+    print(message.text)
     new_addresses: list[str] = [
-        address for address in state_data.get("address", None) or [] if address != message.text
+        address for address in await _get_addresses(state) if address != message.text
     ]
-    await state.update_data(address=new_addresses)
-    # await state.set_state(None)
+    await state.update_data({"addresses": new_addresses})
 
     echo_addresses = await _fetch_addresses(state)
     await message.answer(
@@ -212,12 +213,9 @@ async def add_address(message: Message, state: FSMContext) -> None:
         None
     """
     new_address: str = message.text
-    state_data = await state.get_data()
-    addresses = state_data.get("address", None) or []
+    addresses = await _get_addresses(state)
     addresses.append(new_address)
     await state.update_data(address=addresses)
-    # TODO: fix missed state saving
-    # await state.set_state(state=None)
 
     echo_addresses = await _fetch_addresses(state)
     await message.answer(
@@ -270,9 +268,8 @@ async def shutdowns_handler(message: Message, state: FSMContext) -> None:
 
 
 async def _fetch_addresses(state: FSMContext) -> str:
-    data = await state.get_data()
     echo_addresses = ""
-    if addresses := data.get("addresses") or []:
+    if addresses := await _get_addresses(state):
         echo_addresses = "\nYour Addresses:\n - "
         echo_addresses += "\n - ".join(addresses)
 
@@ -280,9 +277,7 @@ async def _fetch_addresses(state: FSMContext) -> str:
 
 
 async def _fetch_shutdowns(state: FSMContext) -> str:
-    data = await state.get_data()
-    addresses = data.get("addresses")
-    if not addresses:
+    if not (addresses := await _get_addresses(state)):
         return ""
 
     shutdowns = "\nFuture ShutDowns:\n - "
@@ -290,6 +285,11 @@ async def _fetch_shutdowns(state: FSMContext) -> str:
         shutdowns += f"\n - [{address}] 20.07 (10:00 - 14:00)"
 
     return shutdowns
+
+
+async def _get_addresses(state: FSMContext) -> list[str]:
+    data = await state.get_data()
+    return data.get("addresses") or []
 
 
 async def main() -> None:
