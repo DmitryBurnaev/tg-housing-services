@@ -77,4 +77,4 @@ class TGStorage(BaseStorage):
             except Exception as exc:
                 logger.exception("Couldn't read from storage file: %r", exc)
 
-        return {user_id: UserDataRecord.load(user_data) for user_id, user_data in data.items()}
+        return {int(user_id): UserDataRecord.load(user_data) for user_id, user_data in data.items()}
