@@ -18,6 +18,7 @@ from aiogram.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup, Key
 
 from src.config.app import TG_BOT_API_TOKEN
 from src.db.storage import TGStorage
+from src.providers.shutdowns import ShutDownProvider
 
 form_router = Router()
 
@@ -282,7 +283,10 @@ async def _fetch_shutdowns(state: FSMContext) -> str:
 
     shutdowns = "\nFuture ShutDowns:\n - "
     for address in addresses:
-        shutdowns += f"\n - [{address}] 20.07 (10:00 - 14:00)"
+        # TODO: convert string-like address to Address obj
+        shutdowns += f" => {address} <="
+        for sh in ShutDownProvider.for_address(address):
+            shutdowns += f"{sh}"
 
     return shutdowns
 
