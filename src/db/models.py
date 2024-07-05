@@ -1,10 +1,11 @@
 import dataclasses
 import datetime
 import uuid
+from re import Pattern
 from typing import NamedTuple
 
 from src.config.app import SupportedCity
-from src.utils import get_street_and_house
+from src.utils import get_street_and_house, ADDRESS_DEFAULT_PATTERN
 
 
 class Address(NamedTuple):
@@ -32,6 +33,21 @@ class Address(NamedTuple):
                 self.street == other.street,
                 self.house == other.house,
             ]
+        )
+
+    @classmethod
+    def from_string(cls, raw_address: str, pattern: Pattern[str] | None) -> "Address":
+        pattern = pattern or ADDRESS_DEFAULT_PATTERN
+        street_name, houses = get_street_and_house(
+            pattern=pattern,
+            address=raw_address,
+        )
+
+        return cls(
+            city=SupportedCity.SPB,
+            street=street_name,
+            house=houses[0],
+            raw=raw_address,
         )
 
 

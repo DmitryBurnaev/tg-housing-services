@@ -2,7 +2,7 @@ import datetime
 from typing import NamedTuple
 
 from src.config.app import SupportedService
-from src.db.models import User, Address
+from src.db.models import Address
 from src.parsing.main import Parser
 
 
@@ -14,9 +14,10 @@ class ShutDownInfo(NamedTuple):
 
 class ShutDownProvider:
     @classmethod
-    def for_address(cls, address: Address, service: SupportedService) -> list[ShutDownInfo]:
-        service_data_parser = Parser(city=address.city)
-        shutdowns = service_data_parser.parse(service, user_address=address)
+    def for_address(cls, address: str, service: SupportedService) -> list[ShutDownInfo]:
+        user_address = Address.from_string(raw_address=address)
+        service_data_parser = Parser(city=user_address.city)
+        shutdowns = service_data_parser.parse(service, user_address=user_address)
         result: list[ShutDownInfo] = []
         for address, data_ranges in shutdowns.items():
             for data_range in data_ranges:
