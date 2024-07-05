@@ -121,11 +121,12 @@ async def add_address_handler(message: Message, state: FSMContext) -> None:
     Returns:
         None
     """
-    new_address: str = message.text
-    addresses = await _get_addresses(state)
-    addresses.append(new_address)
-    await state.update_data(addresses=addresses)
-    await state.set_state(state=None)
+    new_address: str | None = message.text
+    if new_address:
+        addresses = await _get_addresses(state)
+        addresses.append(new_address)
+        await state.update_data(addresses=addresses)
+        await state.set_state(state=None)
 
     echo_addresses = await _fetch_addresses(state)
     await message.answer(
