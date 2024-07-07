@@ -9,14 +9,14 @@ import logging
 import sys
 
 from aiogram import Bot, Dispatcher, F, Router, html
-from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.client.default import DefaultBotProperties
 from aiogram.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 
-from src.config.app import TG_BOT_API_TOKEN
+from src.config.app import TG_BOT_API_TOKEN, SupportedService
 from src.db.storage import TGStorage
 from src.providers.shutdowns import ShutDownProvider
 
@@ -151,7 +151,6 @@ async def remove_address_handler(message: Message, state: FSMContext) -> None:
         None
 
     """
-    print(message.text)
     new_addresses: list[str] = [
         address for address in await _get_addresses(state) if address != message.text
     ]
@@ -262,7 +261,8 @@ async def shutdowns_handler(message: Message, state: FSMContext) -> None:
         - None
     """
     echo_addresses = await _fetch_addresses(state)
-    shutdowns = await _fetch_shutdowns()
+    shutdowns = await _fetch_shutdowns(state)
+    print(f"Ok, That's your information:\n{echo_addresses}\n======{shutdowns}")
     await message.answer(
         f"Ok, That's your information:\n{echo_addresses}\n======{shutdowns}",
         reply_markup=ReplyKeyboardRemove(),
@@ -272,8 +272,8 @@ async def shutdowns_handler(message: Message, state: FSMContext) -> None:
 async def _fetch_addresses(state: FSMContext) -> str:
     echo_addresses = ""
     if addresses := await _get_addresses(state):
-        echo_addresses = "\nYour Addresses:\n - "
-        echo_addresses += "\n - ".join(addresses)
+        echo_addresses = "\nYour Addresses:\n"
+        echo_addresses += r"\- ".join(addresses)
 
     return echo_addresses
 
@@ -282,14 +282,18 @@ async def _fetch_shutdowns(state: FSMContext) -> str:
     if not (addresses := await _get_addresses(state)):
         return ""
 
-    shutdowns = "\nFuture ShutDowns:\n - "
+    shutdowns_msg = "\nFuture ShutDowns:"
     for address in addresses:
         # TODO: convert string-like address to Address obj
-        shutdowns += f" => {address} <="
-        for sh in ShutDownProvider.for_address(address):
-            shutdowns += f"{sh}"
+        shutdowns_msg += f"\n => {address} <="
+        if shutdowns := ShutDownProvider.for_address(address, service=SupportedService.ELECTRICITY):
+            for sh in shutdowns:
+                shutdowns_msg += rf"\n \- {sh}"
+        else:
+            shutdowns_msg += f"\n  No shutdowns detected :)"
 
-    return shutdowns
+    print(shutdowns_msg)
+    return shutdowns_msg
 
 
 async def _get_addresses(state: FSMContext) -> list[str]:
@@ -301,7 +305,9 @@ async def main() -> None:
     """
     Initialize Bot instance with default bot properties which will be passed to all API calls
     """
-    bot = Bot(token=TG_BOT_API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    bot = Bot(
+        token=TG_BOT_API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2)
+    )
     dp = Dispatcher(storage=TGStorage())
     dp.include_router(form_router)
     await dp.start_polling(bot)
