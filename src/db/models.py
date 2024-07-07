@@ -13,7 +13,7 @@ class Address(NamedTuple):
 
     city: SupportedCity
     street: str
-    house: int
+    house: int | None
     raw: str
 
     def matches(self, other: "Address") -> bool:
@@ -36,7 +36,7 @@ class Address(NamedTuple):
         )
 
     @classmethod
-    def from_string(cls, raw_address: str, pattern: Pattern[str] | None) -> "Address":
+    def from_string(cls, raw_address: str, pattern: Pattern[str] | None = None) -> "Address":
         pattern = pattern or ADDRESS_DEFAULT_PATTERN
         street_name, houses = get_street_and_house(
             pattern=pattern,
@@ -46,7 +46,7 @@ class Address(NamedTuple):
         return cls(
             city=SupportedCity.SPB,
             street=street_name,
-            house=houses[0],
+            house=houses[0] if houses else None,
             raw=raw_address,
         )
 
