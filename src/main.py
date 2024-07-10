@@ -265,6 +265,7 @@ async def shutdowns_handler(message: Message, state: FSMContext) -> None:
     print(f"Ok, That's your information:\n{echo_addresses}\n======{shutdowns}")
     await message.answer(
         f"Ok, That's your information:\n{echo_addresses}\n======{shutdowns}",
+        parse_mode=ParseMode.MARKDOWN,
         reply_markup=ReplyKeyboardRemove(),
     )
 
@@ -272,8 +273,8 @@ async def shutdowns_handler(message: Message, state: FSMContext) -> None:
 async def _fetch_addresses(state: FSMContext) -> str:
     echo_addresses = ""
     if addresses := await _get_addresses(state):
-        echo_addresses = "\nYour Addresses:\n"
-        echo_addresses += r"\- ".join(addresses)
+        echo_addresses = "\nYour Addresses:\n- "
+        echo_addresses += "\n- ".join(addresses)
 
     return echo_addresses
 
@@ -284,7 +285,6 @@ async def _fetch_shutdowns(state: FSMContext) -> str:
 
     shutdowns_msg = "\nFuture ShutDowns:"
     for address in addresses:
-        # TODO: convert string-like address to Address obj
         shutdowns_msg += f"\n => {address} <="
         if shutdowns := ShutDownProvider.for_address(address, service=SupportedService.ELECTRICITY):
             for sh in shutdowns:
@@ -305,9 +305,7 @@ async def main() -> None:
     """
     Initialize Bot instance with default bot properties which will be passed to all API calls
     """
-    bot = Bot(
-        token=TG_BOT_API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2)
-    )
+    bot = Bot(token=TG_BOT_API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN))
     dp = Dispatcher(storage=TGStorage())
     dp.include_router(form_router)
     await dp.start_polling(bot)
