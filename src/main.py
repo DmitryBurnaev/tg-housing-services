@@ -15,6 +15,11 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.client.default import DefaultBotProperties
 from aiogram.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.utils import markdown
+import aiogram.utils.markdown as fmt
+from aiogram.utils.formatting import (
+    Bold, as_list, as_marked_section, as_key_value, HashTag
+)
 
 from src.config.app import TG_BOT_API_TOKEN, SupportedService
 from src.db.storage import TGStorage
@@ -130,7 +135,7 @@ async def add_address_handler(message: Message, state: FSMContext) -> None:
 
     echo_addresses = await _fetch_addresses(state)
     await message.answer(
-        f"Ok, I'll remember your address, {html.bold(message.from_user.full_name)}! "
+        f"Ok, I'll remember your address, {markdown.bold(message.from_user.full_name)}! "
         f"{echo_addresses}",
         reply_markup=ReplyKeyboardRemove(),
     )
@@ -189,17 +194,53 @@ async def info_handler(message: Message, state: FSMContext) -> None:
     Returns:
         None
     """
-    echo_addresses = await _fetch_addresses(state)
-    if echo_addresses:
-        msg = echo_addresses
-    else:
-        msg = "I don't remember any your address. Could you add a first one?"
-
-    await message.answer(
-        f"Hi, {html.bold(message.from_user.full_name)}!\n{msg}",
-        reply_markup=ReplyKeyboardRemove(),
+    content = as_list(
+        f"Hi, {markdown.bold(message.from_user.full_name)}!",
+        "No address yet :(",  # TODO: return in `fetch_addresses`
+        # as_marked_section(
+        #     # f"Hi, {markdown.bold(message.from_user.full_name)}!",
+        #     "No address yet :(",
+        #     # "Test 1",
+        #     # "Test 3",
+        #     # "Test 4",
+        #     marker="☑︎ ",
+        # ),
+        as_marked_section(
+            # f"Hi, {markdown.bold(message.from_user.full_name)}!",
+            "Your addresses:",
+            "Test 1",
+            "Test 3",
+            "Test 4",
+            marker="☑︎ ",
+        ),
+        # as_marked_section(
+        #     Bold("Failed:"),
+        #     "Test 2",
+        #     marker="⚠︎ ",
+        # ),
+        # as_marked_section(
+        #     Bold("Summary:"),
+        #     as_key_value("Total", 4),
+        #     as_key_value("Success", 3),
+        #     as_key_value("Failed", 1),
+        #     marker="  ",
+        # ),
+        sep="\n\n",
     )
+    print(content.as_kwargs())
+    await message.answer(**content.as_kwargs() | {"parse_mode": ParseMode.MARKDOWN})
 
+    # echo_addresses = await _fetch_addresses(state)
+    # if echo_addresses:
+    #     msg = echo_addresses
+    # else:
+    #     msg = "I don't remember any your address. Could you add a first one?"
+    #
+    # await message.answer(
+    #     f"Hi, {markdown.bold(message.from_user.full_name)}!\n{msg}",
+    #     parse_mode=ParseMode.MARKDOWN,
+    #     reply_markup=ReplyKeyboardRemove(),
+    # )
 
 @form_router.message(UserAddressStatesGroup.add_address)
 async def add_address(message: Message, state: FSMContext) -> None:
