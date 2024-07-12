@@ -5,7 +5,7 @@ import uuid
 from src.config.app import SupportedService, SupportedCity
 from src.config.logging import LOGGING_CONFIG
 from src.db.models import User
-from src.parsing.main import Parser
+from src.parsing.main_parsing import Parser
 
 logger = logging.getLogger(__name__)
 

@@ -10,12 +10,13 @@ class SupportedCity(enum.StrEnum):
 
 class SupportedService(enum.StrEnum):
     ELECTRICITY = "ELECTRICITY"
-    # COLD_WATER = "COLD_WATER"
-    # HOT_WATER = "HOT_WATER"
+    COLD_WATER = "COLD_WATER"
+    HOT_WATER = "HOT_WATER"
 
     @classmethod
     def members(cls) -> list["SupportedService"]:
-        return list(map(lambda x: x.value, cls))
+        # TODO: use correct logic: list(map(lambda x: x.value, cls))
+        return [cls.ELECTRICITY]
 
 
 PROJECT_PATH = Path(__file__).parent.parent.absolute()
@@ -33,6 +34,12 @@ RESOURCE_URLS = {
 
 CITY_NAME_MAP = {
     SupportedCity.SPB: "Санкт-Петербург",
+}
+
+SERVICE_NAME_MAP = {
+    SupportedService.ELECTRICITY: "💡Electricity",
+    SupportedService.COLD_WATER: "︎🚰 Cold Water",
+    SupportedService.HOT_WATER: "🚿 Hot Water",
 }
 
 # Bot token can be obtained via https://t.me/BotFather

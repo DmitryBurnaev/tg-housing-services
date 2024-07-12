@@ -15,7 +15,6 @@ LOGGING_CONFIG = {
     "loggers": {
         "src": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
         "parsing": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
-        "db": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
-        "main": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "aiogram": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
     },
 }

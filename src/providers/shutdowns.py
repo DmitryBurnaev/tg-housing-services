@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 from src.config.app import SupportedService, SupportedCity
 from src.db.models import Address
-from src.parsing.main import Parser
+from src.parsing.main_parsing import Parser
 
 
 class ShutDownInfo(NamedTuple):

@@ -12,7 +12,7 @@ from src.db.models import Address, DateRange
 from src.utils import get_street_and_house, ADDRESS_DEFAULT_PATTERN
 from src.config.app import RESOURCE_URLS, SupportedCity, SupportedService, DATA_PATH
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("parsing.main")
 
 
 class Parser:
@@ -23,11 +23,8 @@ class Parser:
     def __init__(self, city: SupportedCity) -> None:
         self.urls = RESOURCE_URLS[city]
         self.city = city
-        self.finish_time_filter = datetime.fromisoformat("2024-06-13") + timedelta(
-            days=self.max_days_filter
-        )
-        # self.date_start = datetime.now().date()
-        self.date_start = datetime.fromisoformat("2024-06-01")
+        self.date_start = datetime.now().date()
+        self.finish_time_filter = self.date_start + timedelta(days=self.max_days_filter)
 
     def parse(
         self, service: SupportedService, user_address: Address
@@ -127,8 +124,8 @@ class Parser:
                             "raw_address": raw_address,
                             "street_name": street_name,
                             "houses": houses,
-                            "start": start_time.isoformat(),
-                            "end": end_time.isoformat(),
+                            "start": start_time.isoformat() if start_time else "",
+                            "end": end_time.isoformat() if end_time else "",
                         },
                     )
                     for house in houses:
