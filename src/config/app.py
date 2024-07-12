@@ -10,8 +10,12 @@ class SupportedCity(enum.StrEnum):
 
 class SupportedService(enum.StrEnum):
     ELECTRICITY = "ELECTRICITY"
-    COLD_WATER = "COLD_WATER"
-    HOT_WATER = "HOT_WATER"
+    # COLD_WATER = "COLD_WATER"
+    # HOT_WATER = "HOT_WATER"
+
+    @classmethod
+    def members(cls) -> list["SupportedService"]:
+        return list(map(lambda x: x.value, cls))
 
 
 PROJECT_PATH = Path(__file__).parent.parent.absolute()
@@ -22,8 +26,8 @@ os.makedirs(DATA_PATH, exist_ok=True)
 RESOURCE_URLS = {
     SupportedCity.SPB: {
         SupportedService.ELECTRICITY: "https://rosseti-lenenergo.ru/planned_work/?city={city}&date_start={date_start}&date_finish={date_finish}&street={street}",
-        SupportedService.HOT_WATER: "https://www.gptek.spb.ru/grafik/",
-        SupportedService.COLD_WATER: "https://www.vodokanal.spb.ru/presscentr/remontnye_raboty/",
+        # SupportedService.HOT_WATER: "https://www.gptek.spb.ru/grafik/",
+        # SupportedService.COLD_WATER: "https://www.vodokanal.spb.ru/presscentr/remontnye_raboty/",
     }
 }
 
