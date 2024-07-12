@@ -17,13 +17,11 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils import markdown
 import aiogram.utils.markdown as fmt
-from aiogram.utils.formatting import (
-    Bold, as_list, as_marked_section, as_key_value, HashTag
-)
+from aiogram.utils.formatting import Bold, as_list, as_marked_section, as_key_value, HashTag, Text
 
-from src.config.app import TG_BOT_API_TOKEN, SupportedService
+from src.config.app import TG_BOT_API_TOKEN, SupportedService, CITY_NAME_MAP
 from src.db.storage import TGStorage
-from src.providers.shutdowns import ShutDownProvider
+from src.providers.shutdowns import ShutDownProvider, ShutDownByServiceInfo
 
 form_router = Router()
 
@@ -194,53 +192,14 @@ async def info_handler(message: Message, state: FSMContext) -> None:
     Returns:
         None
     """
+    addresses = await _fetch_addresses(state)
     content = as_list(
         f"Hi, {markdown.bold(message.from_user.full_name)}!",
-        "No address yet :(",  # TODO: return in `fetch_addresses`
-        # as_marked_section(
-        #     # f"Hi, {markdown.bold(message.from_user.full_name)}!",
-        #     "No address yet :(",
-        #     # "Test 1",
-        #     # "Test 3",
-        #     # "Test 4",
-        #     marker="☑︎ ",
-        # ),
-        as_marked_section(
-            # f"Hi, {markdown.bold(message.from_user.full_name)}!",
-            "Your addresses:",
-            "Test 1",
-            "Test 3",
-            "Test 4",
-            marker="☑︎ ",
-        ),
-        # as_marked_section(
-        #     Bold("Failed:"),
-        #     "Test 2",
-        #     marker="⚠︎ ",
-        # ),
-        # as_marked_section(
-        #     Bold("Summary:"),
-        #     as_key_value("Total", 4),
-        #     as_key_value("Success", 3),
-        #     as_key_value("Failed", 1),
-        #     marker="  ",
-        # ),
+        addresses,
         sep="\n\n",
     )
-    print(content.as_kwargs())
     await message.answer(**content.as_kwargs() | {"parse_mode": ParseMode.MARKDOWN})
 
-    # echo_addresses = await _fetch_addresses(state)
-    # if echo_addresses:
-    #     msg = echo_addresses
-    # else:
-    #     msg = "I don't remember any your address. Could you add a first one?"
-    #
-    # await message.answer(
-    #     f"Hi, {markdown.bold(message.from_user.full_name)}!\n{msg}",
-    #     parse_mode=ParseMode.MARKDOWN,
-    #     reply_markup=ReplyKeyboardRemove(),
-    # )
 
 @form_router.message(UserAddressStatesGroup.add_address)
 async def add_address(message: Message, state: FSMContext) -> None:
@@ -301,40 +260,106 @@ async def shutdowns_handler(message: Message, state: FSMContext) -> None:
     Returns:
         - None
     """
-    echo_addresses = await _fetch_addresses(state)
+    #     content = as_list(
+    #         f"Hi, {markdown.bold(message.from_user.full_name)}!",
+    #         _fetch_addresses(state),
+    #         # as_marked_section(
+    #         #     Bold("Failed:"),
+    #         #     "Test 2",
+    #         #     marker="⚠︎ ",
+    #         # ),
+    #         # as_marked_section(
+    #         #     Bold("Summary:"),
+    #         #     as_key_value("Total", 4),
+    #         #     as_key_value("Success", 3),
+    #         #     as_key_value("Failed", 1),
+    #         #     marker="  ",
+    #         # ),
+    #         sep="\n\n",
+    #     )
+    addresses = await _fetch_addresses(state)
     shutdowns = await _fetch_shutdowns(state)
-    print(f"Ok, That's your information:\n{echo_addresses}\n======{shutdowns}")
-    await message.answer(
-        f"Ok, That's your information:\n{echo_addresses}\n======{shutdowns}",
-        parse_mode=ParseMode.MARKDOWN,
-        reply_markup=ReplyKeyboardRemove(),
+    content = as_list(
+        "Ok, That's your information:",
+        addresses,
+        *shutdowns,
+        sep="\n\n",
     )
+    await message.answer(**content.as_kwargs() | {"parse_mode": ParseMode.MARKDOWN})
+
+    # print(f"Ok, That's your information:\n{echo_addresses}\n======{shutdowns}")
+    # await message.answer(
+    #     f"Ok, That's your information:\n{echo_addresses}\n======{shutdowns}",
+    #     parse_mode=ParseMode.MARKDOWN,
+    #     reply_markup=ReplyKeyboardRemove(),
+    # )
 
 
-async def _fetch_addresses(state: FSMContext) -> str:
-    echo_addresses = ""
+async def _fetch_addresses(state: FSMContext) -> Text | str:
+    """
+    If addresses exist, it returns a marked section that displays the addresses,
+    otherwise it returns the string "No address yet :(".
+
+    Args:
+        state: The state of the FSMContext.
+
+    """
     if addresses := await _get_addresses(state):
-        echo_addresses = "\nYour Addresses:\n- "
-        echo_addresses += "\n- ".join(addresses)
+        return as_marked_section("Your Addresses:", *addresses, marker="☑︎ ")
 
-    return echo_addresses
+    return "No address yet :("
 
 
-async def _fetch_shutdowns(state: FSMContext) -> str:
+async def _fetch_shutdowns(state: FSMContext) -> list[Text | str]:
     if not (addresses := await _get_addresses(state)):
-        return ""
+        return ["No address yet :("]
 
-    shutdowns_msg = "\nFuture ShutDowns:"
-    for address in addresses:
-        shutdowns_msg += f"\n => {address} <="
-        if shutdowns := ShutDownProvider.for_address(address, service=SupportedService.ELECTRICITY):
-            for sh in shutdowns:
-                shutdowns_msg += rf"\n \- {sh}"
-        else:
-            shutdowns_msg += f"\n  No shutdowns detected :)"
+    shutdowns_by_service: list[ShutDownByServiceInfo] = ShutDownProvider.for_addresses(addresses)
+    if not shutdowns_by_service:
+        return ["No shutdowns :)"]
 
-    print(shutdowns_msg)
-    return shutdowns_msg
+    result = []
+    for shutdown_by_service in shutdowns_by_service:
+        if not shutdown_by_service.shutdowns:
+            continue
+
+        title = f"Shutdown Info ({shutdown_by_service.service}):"
+        as_key_values = []
+        for shutdown_info in shutdown_by_service.shutdowns:
+            as_key_values.append(as_key_value("Start", shutdown_info.start))
+            as_key_values.append(as_key_value("End", shutdown_info.start))
+            as_key_values.append(
+                as_key_value(
+                    "Address", f"{shutdown_info.raw_address} ({CITY_NAME_MAP[shutdown_info.city]})"
+                )
+            )
+
+        result.append(as_marked_section(title, *as_key_values))
+
+    return result
+    #
+    #
+    # if shutdowns := ShutDownProvider.for_addresses(addresses):
+    #
+    #
+    #
+    # for address in addresses:
+    #     if shutdowns := ShutDownProvider.for_address(address, service=SupportedService.ELECTRICITY):
+    #
+    #
+    #
+    #
+    # shutdowns_msg = "\nFuture ShutDowns:"
+    # for address in addresses:
+    #     shutdowns_msg += f"\n => {address} <="
+    #     if shutdowns := ShutDownProvider.for_address(address, service=SupportedService.ELECTRICITY):
+    #         for sh in shutdowns:
+    #             shutdowns_msg += rf"\n \- {sh}"
+    #     else:
+    #         shutdowns_msg += f"\n  No shutdowns detected :)"
+    #
+    # print(shutdowns_msg)
+    # return shutdowns_msg
 
 
 async def _get_addresses(state: FSMContext) -> list[str]:
