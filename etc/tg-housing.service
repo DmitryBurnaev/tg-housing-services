@@ -1,0 +1,18 @@
+# copy this file to /etc/systemd/system/tg-housing.service
+
+[Unit]
+Description=TG Housing Service
+Requires=docker.service
+After=docker.service
+
+[Service]
+User=tg-housing
+Group=tg-housing
+ExecStart=/opt/tg-housing/service-start
+ExecStop=/opt/tg-housing/service-stop
+Restart=on-failure
+RestartSec=20
+TimeoutStopSec=180
+
+[Install]
+WantedBy=multi-user.target

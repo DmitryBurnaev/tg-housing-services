@@ -1,10 +1,15 @@
+"""
+This module defines a Telegram bot using the aiogram library to manage user addresses
+in a conversation flow. The bot uses FSMContext to manage the state of the conversation
+and provides a structured way for users to interact with address-related commands.
+"""
 import logging
 
-from aiogram import F, Router, html
+from aiogram import F, Router
+from aiogram.utils import markdown
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
-from aiogram.utils import markdown
 
 from src.handlers.helpers import (
     UserAddressStatesGroup,
@@ -193,8 +198,9 @@ async def clear_handler(message: Message, state: FSMContext) -> None:
 
     """
     await state.clear()
-    await message.answer(
-        f"Ok, I forgot all for you, {html.bold(message.from_user.full_name)}!",
+    await answer(
+        message,
+        f"Ok, I forgot all for you, {markdown.bold(message.from_user.full_name)}!",
         reply_markup=ReplyKeyboardRemove(),
     )
 
