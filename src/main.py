@@ -1,5 +1,5 @@
 """
-This code snippet defines a Telegram bot using the aiogram library to manage user addresses
+This module defines a Telegram bot using the aiogram library to manage user addresses
 in a conversation flow. The bot uses FSMContext to manage the state of the conversation
 and provides a structured way for users to interact with address-related commands.
 """
@@ -7,15 +7,14 @@ and provides a structured way for users to interact with address-related command
 import asyncio
 import logging
 from logging import config
-import sys
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
+from src.db.storage import TGStorage
 from src.config.app import TG_BOT_API_TOKEN
 from src.config.logging import LOGGING_CONFIG
-from src.db.storage import TGStorage
 from src.handlers.bot_handlers import form_router
 
 
@@ -33,5 +32,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())

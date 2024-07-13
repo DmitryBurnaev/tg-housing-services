@@ -1,0 +1,14 @@
+services:
+  bot:
+    image:
+      ${REGISTRY_URL}/${REGISTRY_SERVICE_NAME}:last
+    env_file:
+      - .env
+    environment:
+      - APP_SERVICE=bot
+    networks:
+      - tg-housing
+
+networks:
+  tg-housing:
+    external: true

@@ -1,0 +1,22 @@
+services:
+  bot:
+    image:
+      tg-housing-service
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      - APP_SERVICE=bot
+
+  test:
+    image:
+      tg-housing-service
+    build:
+      context: .
+      args:
+        DEV_DEPS: "true"
+    env_file:
+      - .env
+    environment:
+      - APP_SERVICE=test
