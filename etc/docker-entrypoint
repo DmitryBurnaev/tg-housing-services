@@ -3,11 +3,14 @@
 
 if [ "${APP_SERVICE}" = "bot" ]
   then
-    cd /app && python main.py
+    cd /app/src && python main.py
 
 elif [ "${APP_SERVICE}" = "test" ]
   then
-    cd /app && make test
+    cd /app && \
+    PYTHONPATH=$(pwd)/src ruff check && \
+    PYTHONPATH=$(pwd)/src coverage run -m pytest && \
+    coverage report
 
 else
   echo "APP_SERVICE environment variable is unexpected or was not provided (APP_SERVICE='${APP_SERVICE}')" >&2

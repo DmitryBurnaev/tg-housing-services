@@ -2,6 +2,8 @@ import enum
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 
 class SupportedCity(enum.StrEnum):
     SPB = "SPB"
@@ -23,6 +25,10 @@ PROJECT_PATH = Path(__file__).parent.parent.absolute()
 ROOT_PATH = PROJECT_PATH.parent
 DATA_PATH = ROOT_PATH / ".data"
 os.makedirs(DATA_PATH, exist_ok=True)
+
+ENV_FILE_PATH = ROOT_PATH / ".env"
+if ENV_FILE_PATH.exists():
+    load_dotenv(ENV_FILE_PATH)  # read env variables from .env
 
 RESOURCE_URLS = {
     SupportedCity.SPB: {
