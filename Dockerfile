@@ -40,4 +40,5 @@ COPY --from=code-layer --chown=tg_housing:tg_housing /usr/src .
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 ENTRYPOINT ["/bin/sh", "/app/docker-entrypoint"]

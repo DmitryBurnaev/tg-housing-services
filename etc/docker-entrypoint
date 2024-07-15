@@ -3,13 +3,13 @@
 
 if [ "${APP_SERVICE}" = "bot" ]
   then
-    cd /app/src && python main.py
+    cd /app && python src/main.py
 
 elif [ "${APP_SERVICE}" = "test" ]
   then
     cd /app && \
-    PYTHONPATH=$(pwd)/src ruff check && \
-    PYTHONPATH=$(pwd)/src coverage run -m pytest && \
+    ruff check && \
+    coverage run -m pytest && \
     coverage report
 
 else
