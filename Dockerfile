@@ -20,10 +20,10 @@ RUN apt-get update \
   && poetry config --local virtualenvs.create false \
 	&& if [ "${DEV_DEPS}" = "true" ]; then \
 	     echo "=== Install DEV dependencies ===" && \
-	     PIP_DEFAULT_TIMEOUT=${PIP_DEFAULT_TIMEOUT} poetry install --only=main --no-root --no-cache --no-ansi --no-interaction; \
+	     PIP_DEFAULT_TIMEOUT=${PIP_DEFAULT_TIMEOUT} poetry install --no-root --no-cache --no-ansi --no-interaction; \
      else \
        echo "=== Install PROD dependencies ===" && \
-       PIP_DEFAULT_TIMEOUT=${PIP_DEFAULT_TIMEOUT} poetry install --no-root --no-cache --no-ansi --no-interaction;  \
+       PIP_DEFAULT_TIMEOUT=${PIP_DEFAULT_TIMEOUT} poetry install --only=main --no-root --no-cache --no-ansi --no-interaction;  \
      fi \
   && pip uninstall -y poetry poetry-core poetry-plugin-export \
   && apt-get remove python3-dev libpq-dev build-essential -y \

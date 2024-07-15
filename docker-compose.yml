@@ -1,17 +1,19 @@
 services:
   bot:
     image:
-      tg-housing-service
+      tg-housing-service:bot
     build:
       context: .
     env_file:
       - .env
     environment:
       - APP_SERVICE=bot
+    volumes:
+      - ${PWD}/.data:/app/.data
 
   test:
     image:
-      tg-housing-service
+      tg-housing-service:test
     build:
       context: .
       args:
@@ -20,3 +22,5 @@ services:
       - .env
     environment:
       - APP_SERVICE=test
+    volumes:
+      - ${PWD}/.data:/app/.data
