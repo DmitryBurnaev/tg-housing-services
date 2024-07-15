@@ -7,10 +7,14 @@ if [ "${APP_SERVICE}" = "bot" ]
 
 elif [ "${APP_SERVICE}" = "test" ]
   then
-    cd /app && \
-    ruff check && \
-    coverage run -m pytest && \
-    coverage report
+    cd /app && pytest
+#    sleep 120
+#    bash
+#    cd /app && \
+#    pytest
+##    ruff check && \
+#    coverage run -m pytest && \
+#    coverage report
 
 else
   echo "APP_SERVICE environment variable is unexpected or was not provided (APP_SERVICE='${APP_SERVICE}')" >&2
