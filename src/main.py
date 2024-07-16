@@ -6,7 +6,7 @@ and provides a structured way for users to interact with address-related command
 
 import asyncio
 import logging
-from logging import config
+import logging.config
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
