@@ -1,0 +1,16 @@
+name: Test
+on:
+  pull_request:
+    branches:
+      - master
+      - feature/6-prepare-for-deploy
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build image
+        run: docker-compose build test
+
+      - name: Run tests
+        run: docker-compose up --exit-code-from test test
