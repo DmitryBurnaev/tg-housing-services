@@ -1,0 +1,8 @@
+services:
+  bot:
+    image:
+      ${REGISTRY_URL}/${REGISTRY_SERVICE_NAME}:latest
+    env_file:
+      - .env
+    environment:
+      - APP_SERVICE=bot
