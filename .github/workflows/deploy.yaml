@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-      - feature/6-prepare-for-deploy
+#      - feature/6-prepare-for-deploy
 
 jobs:
   test:
