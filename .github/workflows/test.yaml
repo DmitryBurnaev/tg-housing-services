@@ -1,15 +1,19 @@
 name: Test
 on:
+  push:
+    branches:
+      - feature/6-prepare-for-deploy
+
   pull_request:
     branches:
       - master
-      - feature/6-prepare-for-deploy
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+
       - name: Build image
         run: docker-compose build test
 
