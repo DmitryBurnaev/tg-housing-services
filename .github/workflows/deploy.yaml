@@ -11,6 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v1
  
+      - name: Prepare .env file
+        env:
+          PWD: $(PWD)
+        run: |
+          cp .env.template .env
+          env >> .env
+
       - name: Build image
         run: docker-compose build test
 
@@ -22,6 +29,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+
+      - name: Prepare .env file
+        env:
+          PWD: $(PWD)
+        run: |
+          cp .env.template .env
+          env >> .env
 
       - name: Docker login
         run: |
