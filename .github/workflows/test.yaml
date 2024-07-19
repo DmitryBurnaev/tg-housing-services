@@ -1,9 +1,5 @@
 name: Test
 on:
-  push:
-    branches:
-      - feature/6-prepare-for-deploy
-
   pull_request:
     branches:
       - master
@@ -13,6 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+
+      - name: Prepare .env file
+        env:
+          PWD: $(PWD)
+        run: |
+          cp .env.template .env
+          env >> .env
 
       - name: Build image
         run: docker-compose build test
