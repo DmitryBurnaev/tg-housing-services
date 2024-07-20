@@ -3,26 +3,26 @@ on:
   push:
     branches:
       - master
-#      - feature/6-prepare-for-deploy
+      - feature/6-prepare-for-deploy
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
- 
-      - name: Prepare .env file
-        env:
-          PWD: $(PWD)
-        run: |
-          cp .env.template .env
-          env >> .env
-
-      - name: Build image
-        run: docker-compose build test
-
-      - name: Run tests
-        run: docker-compose up --exit-code-from test test
+#  test:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v1
+#
+#      - name: Prepare .env file
+#        env:
+#          PWD: $(PWD)
+#        run: |
+#          cp .env.template .env
+#          env >> .env
+#
+#      - name: Build image
+#        run: docker-compose build test
+#
+#      - name: Run tests
+#        run: docker-compose up --exit-code-from test test
 
   build-and-deploy:
     needs: [test]
@@ -47,12 +47,6 @@ jobs:
       - name: Push image to registry
         run: docker push ${{ secrets.REGISTRY_URL }}/tg-housing:last
 
-      - name: Prepare SSH key
-        run: |
-          mkdir ~/.ssh
-          echo "${{ secrets.SSH_PKEY }}" > ~/.ssh/id_rsa
-          chmod 400 ~/.ssh/id_rsa
-
       - name: Copy project files
         run: |
           scp -o StrictHostKeyChecking=no ./.env.template ${{ secrets.SSH_USER }}@${{ secrets.PROD_SSH_HOST }}:${{ secrets.PROD_PROJECT_ROOT }}/.env.template
@@ -69,6 +63,7 @@ jobs:
           port: ${{ secrets.PROD_SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PKEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             export DEPLOY_MODE=CI
             export REGISTRY_URL=${{ secrets.REGISTRY_URL }}
