@@ -47,6 +47,12 @@ jobs:
       - name: Push image to registry
         run: docker push ${{ secrets.REGISTRY_URL }}/tg-housing:last
 
+      - name: Prepare SSH key
+        run: |
+          mkdir ~/.ssh
+          echo "${{ secrets.SSH_PKEY }}" > ~/.ssh/id_rsa
+          chmod 400 ~/.ssh/id_rsa
+
       - name: Copy project files
         run: |
           scp -o StrictHostKeyChecking=no ./.env.template ${{ secrets.SSH_USER }}@${{ secrets.PROD_SSH_HOST }}:${{ secrets.PROD_PROJECT_ROOT }}/.env.template
